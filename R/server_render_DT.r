@@ -47,9 +47,9 @@ sql_dt_filter <- function(remote_tbl) {
 
                 if (col_db_name %in% dt_col_names) {
                     if (direction == "asc") {
-                        query <- query |> arrange(!!sym(col_db_name))
+                        query <- query |> window_order(!!sym(col_db_name))
                     } else {
-                        query <- query |> arrange(desc(!!sym(col_db_name)))
+                        query <- query |> window_order(desc(!!sym(col_db_name)))
                     }
                 }
             }
