@@ -1,4 +1,4 @@
-sql_dt_filter <- function(remote_tbl, current_page_data, session) {
+sql_dt_filter <- function(remote_tbl) {
     function(data, params) {
         # Get the actual table from the reactive without tracking dependency
         tbl <- isolate(remote_tbl())
@@ -61,9 +61,8 @@ sql_dt_filter <- function(remote_tbl, current_page_data, session) {
 
         # Fetch data into R
         data_out <- query |>
-            head(start + len) |>
-            collect() |>
-            tail(pmin(len, nrow(.)))
+            filter(row_number() > start & row_number() <= start + len) |>
+            collect()
 
         # current_page_data(data_out)
 
@@ -88,7 +87,7 @@ sql_dt_filter <- function(remote_tbl, current_page_data, session) {
 }
 
 
-render_db_DT <- function(table, current_page_data, session, ...){
+render_db_DT <- function(table, ...){
     # Default options
     options <- list(
         serverSide = TRUE,
@@ -114,12 +113,11 @@ render_db_DT <- function(table, current_page_data, session, ...){
             }),
             server = TRUE,
             options = options,
-            funcFilter = sql_dt_filter(table, current_page_data, session),
+            funcFilter = sql_dt_filter(table),
             selection = 'single'
         ),
         args  # Pass remaining arguments
     )
-    
     do.call(renderDT, dt_args)
 }
 
@@ -152,19 +150,18 @@ make_server_person_DT <- function(input, output, session, con, params){
 
 make_server_condition_DT <- function(input, output, session, con, params){
     concept_name <- con$concept |> select(concept_id, concept_name)
-    reactiveVal({
-        con$condition_occurrence |> 
-        inner_join(concept_name, by = c("condition_concept_id" = "concept_id")) |>
-        rename(condition = concept_name)|>
-        select(person_id, condition, condition_start_date, condition_end_date) ->
-        dt
+    condition_table <- reactive({
+        dt <- con$condition_occurrence |> 
+            inner_join(concept_name, by = c("condition_concept_id" = "concept_id")) |>
+            rename(condition = concept_name)|>
+            select(person_id, condition, condition_start_date, condition_end_date)
 
         if (!is.null(input$tbl_person_id)) {
             dt <- dt |> 
-            filter(person_id == input$tbl_person_id)
+                filter(person_id == input$tbl_person_id)
         }
-    }) -> 
-    condition_table
+        dt
+    })
 
     output$condition_DT <- render_db_DT(condition_table)
 }
@@ -184,7 +181,4 @@ browser_server <- function(input, output, session, con) {
     observeEvent(input$tbl_person_id, {
         print(input$tbl_person_id)
     })
-
-    print(isolate(input$tbl_person_id))
-
 }
