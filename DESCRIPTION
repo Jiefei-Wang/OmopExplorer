@@ -17,4 +17,5 @@ Imports:
     DBI,
     DT,
     duckdb,
-    dbplyr
+    dbplyr,
+    glue

@@ -6,4 +6,5 @@
 #' @import DT
 #' @import duckdb
 #' @import dbplyr
+#' @importFrom glue glue
 NULL

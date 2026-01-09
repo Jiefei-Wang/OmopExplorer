@@ -127,3 +127,78 @@ concept_id_source_value_map <- list(
   # CDM_SOURCE
   cdm_version_concept_id = NULL
 )
+
+
+
+key_columns_map <- list(
+  person = "person_id",
+  observation_period = "observation_period_id",
+  visit_occurrence = "visit_occurrence_id",
+  visit_detail = "visit_detail_id",
+  condition_occurrence = "condition_occurrence_id",
+  drug_exposure = "drug_exposure_id",
+  procedure_occurrence = "procedure_occurrence_id",
+  device_exposure = "device_exposure_id",
+  measurement = "measurement_id",
+  observation = "observation_id",
+  death = "person_id",
+  note = "note_id",
+  note_nlp = "note_nlp_id",
+  specimen = "specimen_id"
+)
+
+omop_show_columns <- list(
+  person = c("person_id", "birth_date", "gender_concept_id", "race_concept_id", "ethnicity_concept_id"),
+  
+  condition_occurrence = c(
+    "person_id",
+    "condition_occurrence_id",
+    "condition_concept_id",
+    "condition_start_date",
+    "condition_end_date"
+  ),
+  visit_occurrence = c(
+    "person_id",
+    "visit_occurrence_id",
+    "visit_concept_id",
+    "visit_start_date",
+    "visit_end_date"
+  ),
+  procedure_occurrence = c(
+    "person_id",
+    "procedure_occurrence_id",
+    "procedure_concept_id",
+    "procedure_date"
+  ),
+  measurement = c(
+    "person_id",
+    "measurement_id",
+    "measurement_date",
+    "measurement_concept_id",
+    "value_as_number",
+    "unit_concept_id",
+    "value_as_concept_id"
+  ),
+  drug_exposure = c(
+    "person_id",
+    "drug_exposure_id",
+    "drug_concept_id",
+    "drug_exposure_start_date",
+    "drug_exposure_end_date",
+    "quantity"
+  ),
+  note = c(
+    "person_id",
+    "note_id",
+    "note_date",
+    "note_type_concept_id",
+    "note_title",
+    "note_text_preview"
+  ),
+  death = c(
+    "person_id",
+    "death_date",
+    "death_type_concept_id",
+    "cause_concept_id"
+  )
+)

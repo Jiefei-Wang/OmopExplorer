@@ -1,4 +1,4 @@
-sql_dt_filter <- function(remote_tbl) {
+sql_dt_filter <- function(remote_tbl, concept_name, post_process_pipe, table_name) {
     function(data, params) {
         # Get the actual table from the reactive without tracking dependency
         tbl <- remote_tbl|>
@@ -20,11 +20,9 @@ sql_dt_filter <- function(remote_tbl) {
             search_term <- paste0("%", global_search, "%")
             # Get only columns marked as searchable
             searchable_indices <- which(vapply(params$columns, function(x) x$searchable == "true", logical(1)))
-            # Map to actual DB names (offset by 1 if column 0 is rowname placeholder)
-            search_cols <- dt_col_names[searchable_indices - 1]
-            search_cols <- search_cols[!is.na(search_cols)]
-
-            query <- query |> filter(if_any(all_of(search_cols), ~ . %like% search_term))
+            search_cols <- vapply(params$columns[searchable_indices], function(x) x$name, character(1))
+            search_cols <- search_cols[!is.na(search_cols)&search_cols%in%dt_col_names]
+            query <- sql_search(query, search_cols, global_search)
         }
 
         # 5. Column-specific Search
@@ -32,7 +30,7 @@ sql_dt_filter <- function(remote_tbl) {
             col_search <- params$columns[[i]]$search$value
             col_db_name <- params$columns[[i]]$name
             if (col_search != "" && col_db_name %in% dt_col_names) {
-                query <- query |> filter(!!sym(col_db_name) %like% !!paste0("%", col_search, "%"))
+                query <- sql_search(query, col_db_name, col_search)
             }
         }
 
@@ -66,20 +64,44 @@ sql_dt_filter <- function(remote_tbl) {
         query <- query |>
             filter(shiny_row_idx > start & shiny_row_idx <= start + len)
 
-        for (col in setdiff(dt_col_names, names(concept_id_source_value_map))) {
+        # map concept_id to its name
+        concept_col_list <- intersect(dt_col_names, names(concept_id_source_value_map))
+        for (col in concept_col_list) {
             mapped_source_value <- concept_id_source_value_map[[col]]
             by <- structure("concept_id", names = col)
+            query <- query |>
+                left_join(concept_name, by = by) 
 
-            query <- query |> 
-            left_join(concept_name, by = by) |>
-            mutate(!!sym(col) := case_when(
-                !is.null(mapped_source_value) & (is.na(!!sym(col)) | !!sym(col) == 0) ~ !!sym(mapped_source_value),
-                TRUE ~ paste0(!!sym(col), ": ", concept_name)
-            )) |>
-            select(-concept_name)
+            if (is.null(mapped_source_value)){
+                query <- query |> 
+                    mutate(!!sym(col) := paste0(!!sym(col), ": ", concept_name)) 
+            } else {
+                query <- query |>
+                mutate(!!sym(col) := case_when(
+                    (is.na(!!sym(col)) | !!sym(col) == 0) ~ !!sym(mapped_source_value),
+                    TRUE ~ paste0(!!sym(col), ": ", concept_name)
+                ))
+            }
+            query <- query |> select(-concept_name)
         }
 
+        # additional processing and select variables
+        show_columns <- omop_show_columns[[table_name]]
+        query <- post_process_pipe(query)|>
+        select(all_of(show_columns))
+
         data_out <- collect(query)
+
+        # add meta data
+        key_column <- key_columns_map[[table_name]]
+        meta_data <- c()
+        for(i in seq_len(nrow(data_out))){
+            row_id <- data_out[[key_column]][i]
+            person_id <- data_out[['person_id']][i]
+            meta <- pack_meta_info(table_name, person_id, row_id)
+            meta_data <- c(meta_data,meta)
+        }
+        data_out <- cbind(shiny_meta = meta_data, data_out)
 
         # current_page_data(data_out)
 
@@ -91,7 +113,6 @@ sql_dt_filter <- function(remote_tbl) {
         # Convert to un-named matrix so JSON is [[val, val], [val, val]]
         final_matrix <- as.matrix(final_df)
         dimnames(final_matrix) <- NULL
-
         return(list(
             draw = as.integer(params$draw),
             recordsTotal = records_total,
@@ -104,25 +125,69 @@ sql_dt_filter <- function(remote_tbl) {
 }
 
 
-render_db_DT <- function(table, additional_options = list(), ...){
+render_db_DT <- function(
+    params,
+    con,
+    table_name, 
+    filter_person_id = TRUE,
+    post_process_pipe = \(x) x,
+    additional_options = list(), 
+    additional_callback = NULL,
+    ...){
+    
+    # tables
+    table <- con[[table_name]]
+    concept_name <- con[['concept']]|>
+        select(concept_id, concept_name)
+
+
+    # whether the table should be filtered by person_id
+    if (filter_person_id) {
+        if (!is.na(params$target_person_id())) {
+            table <- table |>
+                filter(person_id == params$target_person_id())
+        }
+    }
+
+    # handle double click callback
+    callback <- glue("
+        table.on('dblclick.dt', 'tbody tr', function () {{
+            console.log('Row double clicked');
+            var row = table.row(this);
+            var data = row.data();
+            console.log(data[1]);
+            Shiny.setInputValue('tbl_dblclick_meta', data[1], {{priority: 'event'}});
+        }});
+    ")
+
+    if (!is.null(additional_callback)) {
+        callback <- paste(callback, additional_callback, sep = "\n")
+    }
+    callback <- DT::JS(callback)
+
+
     # Default options
     options <- list(
         serverSide = TRUE,
-        processing = TRUE
+        processing = TRUE,
+        columnDefs = list(
+            list(visible=FALSE, targets = "shiny_meta")
+            )
     )
     options <- c(options, additional_options)
     
-
+    show_columns <- omop_show_columns[[table_name]]
+    all_columns <- c("shiny_meta", show_columns)
+    dummy <- rep(list(1), length(all_columns))
+    names(dummy) <- all_columns
+    dummy <- as.data.frame(dummy)
     renderDT(
-        expr = {
-            table |>
-            head(1) |>
-            collect()
-        },
+        expr = dummy,
         server = TRUE,
         options = options,
-        funcFilter = sql_dt_filter(table),
+        funcFilter = sql_dt_filter(table, concept_name, post_process_pipe, table_name),
         selection = 'single',
+        callback = callback,
         ...
     )
 }
