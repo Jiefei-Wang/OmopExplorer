@@ -1,7 +1,9 @@
 sql_dt_filter <- function(remote_tbl) {
     function(data, params) {
         # Get the actual table from the reactive without tracking dependency
-        tbl <- remote_tbl
+        tbl <- remote_tbl|>
+        mutate(shiny_row_idx = row_number())
+        
         
         # 1. Column Metadata
         dt_col_names <- colnames(tbl)
@@ -47,9 +49,9 @@ sql_dt_filter <- function(remote_tbl) {
 
                 if (col_db_name %in% dt_col_names) {
                     if (direction == "asc") {
-                        query <- query |> window_order(!!sym(col_db_name))
+                        query <- query |> arrange(!!sym(col_db_name))
                     } else {
-                        query <- query |> window_order(desc(!!sym(col_db_name)))
+                        query <- query |> arrange(desc(!!sym(col_db_name)))
                     }
                 }
             }
@@ -60,9 +62,24 @@ sql_dt_filter <- function(remote_tbl) {
         len <- as.integer(params$length)
 
         # Fetch data into R
-        data_out <- query |>
-            filter(row_number() > start & row_number() <= start + len) |>
-            collect()
+        print(paste0("Fetching rows start ", start, " len ", len))
+        query <- query |>
+            filter(shiny_row_idx > start & shiny_row_idx <= start + len)
+
+        for (col in setdiff(dt_col_names, names(concept_id_source_value_map))) {
+            mapped_source_value <- concept_id_source_value_map[[col]]
+            by <- structure("concept_id", names = col)
+
+            query <- query |> 
+            left_join(concept_name, by = by) |>
+            mutate(!!sym(col) := case_when(
+                !is.null(mapped_source_value) & (is.na(!!sym(col)) | !!sym(col) == 0) ~ !!sym(mapped_source_value),
+                TRUE ~ paste0(!!sym(col), ": ", concept_name)
+            )) |>
+            select(-concept_name)
+        }
+
+        data_out <- collect(query)
 
         # current_page_data(data_out)
 
@@ -80,7 +97,7 @@ sql_dt_filter <- function(remote_tbl) {
             recordsTotal = records_total,
             recordsFiltered = records_filtered,
             data = final_matrix,
-            DT_rows_all = seq_len(records_filtered), 
+            # DT_rows_all = seq_len(records_filtered), 
             DT_rows_current = seq(start + 1, length.out = nrow(data_out))
         ))
     }
@@ -99,7 +116,7 @@ render_db_DT <- function(table, additional_options = list(), ...){
     renderDT(
         expr = {
             table |>
-            filter(FALSE) |>
+            head(1) |>
             collect()
         },
         server = TRUE,

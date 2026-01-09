@@ -1,39 +1,44 @@
 
 make_server_person_DT <- function(input, output, session, con, params){
     concept_name <- con$concept |> select(concept_id, concept_name)
-    reactiveVal(
+    reactiveVal({
         con$person |> 
-        mutate(birth_date = as.Date(birth_datetime)) |>
-        left_join(concept_name, by = c("gender_concept_id" = "concept_id"), suffix = c("", "_gender")) |>
-        mutate(gender = case_when(
-            is.na(gender_concept_id) | gender_concept_id == 0 ~ gender_source_value,
-            TRUE ~ paste0(concept_name, " (", gender_concept_id, ")")
-        )) |>
-        left_join(concept_name, by = c("race_concept_id" = "concept_id"), suffix = c("", "_race")) |>
-        mutate(race = case_when(
-            is.na(race_concept_id) | race_concept_id == 0 ~ race_source_value,
-            TRUE ~ paste0(concept_name_race, " (", race_concept_id, ")")
-        )) |>
-        left_join(concept_name, by = c("ethnicity_concept_id" = "concept_id"), suffix = c("", "_ethnicity")) |>
-        mutate(ethnicity = case_when(
-            is.na(ethnicity_concept_id) | ethnicity_concept_id == 0 ~ ethnicity_source_value,
-            TRUE ~ paste0(concept_name_ethnicity, " (", ethnicity_concept_id, ")")
-        )) |>
-        select(person_id, birth_date, gender, race, ethnicity)
-    ) -> person_table
+        mutate(birth_date = as.Date(birth_datetime))|>
+        select(person_id, birth_date, gender_concept_id, race_concept_id, ethnicity_concept_id)
+    }) -> person_table
     
     observe({
         output$person_DT <- render_db_DT(person_table(),
-            additional_options = list(
-                order = list(list(1, 'asc'))
-            ),
             callback = DT::JS("
-            table.on('click.dt', 'tbody tr', function() {
-                var data = table.row(this).data();
-                console.log(data);
-                // person_id is the second column in df
-                Shiny.setInputValue('tbl_person_id', data[1], {priority: 'event'});
-            });
+                var person_selectedRow = null;
+
+                table.on('click.dt', 'tbody tr', function () {
+                var row = table.row(this);
+
+                if (person_selectedRow === this) {
+                    // unselect
+                    $(this).removeClass('selected');
+                    person_selectedRow = null;
+                    Shiny.setInputValue('tbl_person_id', null, {priority: 'event'});
+                } else {
+                    // select new row
+                    if (person_selectedRow !== null) {
+                    $(person_selectedRow).removeClass('selected');
+                    }
+                    $(this).addClass('selected');
+                    person_selectedRow = this;
+
+                    var data = row.data();
+                    // person_id is column index 1
+                    Shiny.setInputValue('tbl_person_id', data[1], {priority: 'event'});
+                }
+                });
+
+                table.on('dblclick.dt', 'tbody tr', function () {
+                var row = table.row(this);
+                var data = row.data();
+                Shiny.setInputValue('person_dblclick_id', data[1], {priority: 'event'});
+                });
             ")
         )
     })
@@ -55,14 +60,12 @@ make_server_condition_DT <- function(input, output, session, con, params){
     })
     observe({
         table <- condition_table()
-        if (!is.null(params$selected_person_id())) {
+        if (!is.na(params$target_person_id())) {
             table <- table |> 
-            filter(person_id == params$selected_person_id())
+            filter(person_id == params$target_person_id())
         }
         output$condition_DT <- 
-        render_db_DT(table, additional_options = list(
-            order = list(list(2, 'asc'))
-        ))
+        render_db_DT(table)
     })
 }
 
@@ -81,14 +84,12 @@ make_server_visit_DT <- function(input, output, session, con, params){
     })
     observe({
         table <- visit_table()
-        if (!is.null(params$selected_person_id())) {
+        if (!is.na(params$target_person_id())) {
             table <- table |> 
-            filter(person_id == params$selected_person_id())
+            filter(person_id == params$target_person_id())
         }
         output$visit_DT <- 
-        render_db_DT(table, additional_options = list(
-            order = list(list(2, 'asc'))
-        ))
+        render_db_DT(table)
     })
 }
 
@@ -107,14 +108,12 @@ make_server_procedure_DT <- function(input, output, session, con, params){
     })
     observe({
         table <- procedure_table()
-        if (!is.null(params$selected_person_id())) {
+        if (!is.na(params$target_person_id())) {
             table <- table |> 
-            filter(person_id == params$selected_person_id())
+            filter(person_id == params$target_person_id())
         }
         output$procedure_DT <- 
-        render_db_DT(table, additional_options = list(
-            order = list(list(2, 'asc'))
-        ))
+        render_db_DT(table)
     })
 }
 
@@ -123,29 +122,30 @@ make_server_procedure_DT <- function(input, output, session, con, params){
 make_server_measurement_DT <- function(input, output, session, con, params){
     concept_name <- con$concept |> select(concept_id, concept_name)
     measurement_table <- reactiveVal({
-        dt <- con$measurement |> 
-            left_join(concept_name, by = c("measurement_concept_id" = "concept_id"), suffix = c("", "_meas")) |>
-            mutate(measurement = case_when(
-                is.na(measurement_concept_id) | measurement_concept_id == 0 ~ measurement_source_value,
-                TRUE ~ paste0(concept_name, " (", measurement_concept_id, ")")
-            )) |>
-            left_join(concept_name, by = c("unit_concept_id" = "concept_id"), suffix = c("", "_unit")) |>
-            mutate(unit = case_when(
-                is.na(unit_concept_id) | unit_concept_id == 0 ~ unit_source_value,
-                TRUE ~ paste0(concept_name_unit, " (", unit_concept_id, ")")
-            )) |>
-            select(person_id, measurement_id, measurement, value_as_number, unit, measurement_date)
+        # dt <- con$measurement |> 
+        #     left_join(concept_name, by = c("measurement_concept_id" = "concept_id"), suffix = c("", "_meas")) |>
+        #     mutate(measurement = case_when(
+        #         is.na(measurement_concept_id) | measurement_concept_id == 0 ~ measurement_source_value,
+        #         TRUE ~ paste0(concept_name, " (", measurement_concept_id, ")")
+        #     )) |>
+        #     left_join(concept_name, by = c("unit_concept_id" = "concept_id"), suffix = c("", "_unit")) |>
+        #     mutate(unit = case_when(
+        #         is.na(unit_concept_id) | unit_concept_id == 0 ~ unit_source_value,
+        #         TRUE ~ paste0(concept_name_unit, " (", unit_concept_id, ")")
+        #     )) |>
+        #     select(person_id, measurement_id, measurement_concept_id, value_as_number, unit_concept_id, measurement_date)
+
+            dt<- con$measurement |>
+            select(person_id, measurement_id, measurement_concept_id, value_as_number, unit_concept_id, measurement_date)
     })
     observe({
         table <- measurement_table()
-        if (!is.null(params$selected_person_id())) {
+        if (!is.na(params$target_person_id())) {
             table <- table |> 
-            filter(person_id == params$selected_person_id())
+            filter(person_id == params$target_person_id())
         }
         output$measurement_DT <- 
-        render_db_DT(table, additional_options = list(
-            order = list(list(2, 'asc'))
-        ))
+        render_db_DT(table)
     })
 }
 
@@ -164,14 +164,12 @@ make_server_drug_DT <- function(input, output, session, con, params){
     })
     observe({
         table <- drug_table()
-        if (!is.null(params$selected_person_id())) {
+        if (!is.na(params$target_person_id())) {
             table <- table |> 
-            filter(person_id == params$selected_person_id())
+            filter(person_id == params$target_person_id())
         }
         output$drug_DT <- 
-        render_db_DT(table, additional_options = list(
-            order = list(list(2, 'asc'))
-        ))
+        render_db_DT(table)
     })
 }
 
@@ -191,14 +189,12 @@ make_server_note_DT <- function(input, output, session, con, params){
     })
     observe({
         table <- note_table()
-        if (!is.null(params$selected_person_id())) {
+        if (!is.na(params$target_person_id())) {
             table <- table |> 
-            filter(person_id == params$selected_person_id())
+            filter(person_id == params$target_person_id())
         }
         output$note_DT <- 
-        render_db_DT(table, additional_options = list(
-            order = list(list(2, 'asc'))
-        ))
+        render_db_DT(table)
     })
 }
 
@@ -222,14 +218,12 @@ make_server_death_DT <- function(input, output, session, con, params){
     })
     observe({
         table <- death_table()
-        if (!is.null(params$selected_person_id())) {
+        if (!is.na(params$target_person_id())) {
             table <- table |> 
-            filter(person_id == params$selected_person_id())
+            filter(person_id == params$target_person_id())
         }
         output$death_DT <- 
-        render_db_DT(table, additional_options = list(
-            order = list(list(2, 'asc'))
-        ))
+        render_db_DT(table)
     })
 }
 
@@ -237,7 +231,32 @@ make_server_death_DT <- function(input, output, session, con, params){
 
 browser_server <- function(input, output, session, con) {
     params <- list()
-    params$selected_person_id <- reactive(input$tbl_person_id)
+    # Use reactiveVal to store the selected person ID
+    params$start_date <- reactive({
+        as.Date(input$sidebar_date_range_filter[1])
+    })
+    params$end_date <- reactive({
+        as.Date(input$sidebar_date_range_filter[2])
+    })
+    
+    # Debug: Print when date range changes
+    observeEvent(params$start_date(), {
+        print(paste("Start date:", params$start_date()))
+        print(paste("End date:", params$end_date()))
+    })
+
+    target_person_id <- reactiveVal(NA)
+    params$target_person_id <- target_person_id
+    # Update UI filter when table row is clicked
+    observeEvent(input$tbl_person_id, {
+        target_person_id(input$tbl_person_id)
+    })
+    
+    # Update param when UI filter changes
+    observeEvent(input$sidebar_person_id_filter, {
+        target_person_id(input$sidebar_person_id_filter)
+    })
+
     make_server_person_DT(input, output, session, con, params)
     make_server_visit_DT(input, output, session, con, params)
     make_server_condition_DT(input, output, session, con, params)
@@ -250,4 +269,32 @@ browser_server <- function(input, output, session, con) {
     observeEvent(input$tbl_person_id, {
         print(input$tbl_person_id)
     })
+
+    person_details <- eventReactive(input$person_dblclick_id, {
+        req(input$person_dblclick_id)
+        id <- input$person_dblclick_id
+
+        # Replace with your dbplyr query:
+        # person_detail_tbl() should return a tbl() or data.frame
+        detail <- con$person |> 
+            filter(person_id == id) |>
+            collect()
+
+        detail
+    })
+
+    observeEvent(input$person_dblclick_id, {
+        showModal(modalDialog(
+            title = paste("Person", input$person_dblclick_id),
+            DTOutput("person_detail_DT"),
+            easyClose = TRUE,
+            size = "l"
+        ))
+    })
+
+    output$person_detail_DT <- renderDT({
+        req(person_details())
+        datatable(person_details(), rownames = FALSE, options = list(dom = "t"))
+    })
+    
 }

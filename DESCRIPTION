@@ -14,10 +14,7 @@ Imports:
     ggplot2,
     shiny,
     bslib,
-    shinyMobile,
-    duckdb,
-    dbplyr,
     DBI,
     DT,
-    reactable,
-    reactable.extras
+    duckdb,
+    dbplyr

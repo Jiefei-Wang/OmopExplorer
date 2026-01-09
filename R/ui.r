@@ -38,15 +38,28 @@ death_list_ui <- nav_panel(
     DTOutput("death_DT")
 )
 
+sidebar_ui <- sidebar(
+    title = "Filters",
+    id = "sidebar",
+    collapsed = TRUE,
+    # person id filter
+    numericInput("sidebar_person_id_filter", "Person ID", value = ""),
+    # date range filter
+    dateRangeInput(
+        "sidebar_date_range_filter", "Date Range",
+        start = "0000-01-01",
+        end = "9999-12-31"
+    )
 
+)
 
 
 
 
 
 browser_ui <- page_sidebar(
-  title = "Penguins dashboard",
-  sidebar = "test",
+  title = "OMOP Explorer",
+  sidebar = sidebar_ui,
   navset_tab(
     person_list_ui,
     visit_list_ui,
