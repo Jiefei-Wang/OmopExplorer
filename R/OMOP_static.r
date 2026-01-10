@@ -130,7 +130,7 @@ concept_id_source_value_map <- list(
 
 
 
-key_columns_map <- list(
+omop_key_columns <- list(
   person = "person_id",
   observation_period = "observation_period_id",
   visit_occurrence = "visit_occurrence_id",
@@ -149,7 +149,7 @@ key_columns_map <- list(
 
 omop_show_columns <- list(
   person = c("person_id", "birth_date", "gender_concept_id", "race_concept_id", "ethnicity_concept_id"),
-  
+
   condition_occurrence = c(
     "person_id",
     "condition_occurrence_id",

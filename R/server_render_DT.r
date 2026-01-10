@@ -93,7 +93,7 @@ sql_dt_filter <- function(remote_tbl, concept_name, post_process_pipe, table_nam
         data_out <- collect(query)
 
         # add meta data
-        key_column <- key_columns_map[[table_name]]
+        key_column <- omop_key_columns[[table_name]]
         meta_data <- c()
         for(i in seq_len(nrow(data_out))){
             row_id <- data_out[[key_column]][i]
