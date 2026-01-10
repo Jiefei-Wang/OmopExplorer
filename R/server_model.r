@@ -1,39 +1,93 @@
-make_modal_view_item <- function(label, value){
-    tagList(
-        tags$strong(label, style = "display: block; margin-top: 10px; color: #555;"),
-        tags$div(
-            style = "border: 1px solid #e3e3e3; background-color: #f9f9f9; padding: 10px; border-radius: 4px; white-space: pre-wrap; overflow-wrap: break-word;",
-            if (is.na(value) || as.character(value) == "") span("NA", style="color: #ccc; font-style: italic;") else as.character(value)
-        )
+make_clickable_id <- function(id_name, id_value){
+    table_name <- omop_key_to_table[[id_name]]
+    
+    htmlTemplate(
+        filename = system.file("html/modal_clickable.html", package = "OmopExplorer"),
+        table_name = table_name,
+        id_value = id_value
     )
 }
 
+make_modal_view_item <- function(label, value){
+    if (label %in% names(omop_key_to_table)){
+        value <- make_clickable_id(label, value)
+    } else {
+        value <- as.character(value)
+    }
+    htmlTemplate(
+        filename = system.file("html/modal_item.html", package = "OmopExplorer"),
+        label = label,
+        value = value
+    )
+}
+
+make_modal_title <- function(detail_list){
+    table_name <- detail_list$shiny_table_name
+    person_id <- detail_list$person_id
+    row_id <- detail_list[[omop_key_columns[[table_name]]]]
+    if (table_name == "person"){
+        glue("person: {person_id}")
+    }else{
+        HTML(glue("{table_name}: {row_id} for person: {make_clickable_id('person_id', person_id)}"))
+    }
+}
+
+
 
 make_server_modal <- function(input, output, session, con, params){
-    modal_details <- eventReactive(input$tbl_dblclick_meta, {
+    modal_key <- reactiveVal(NULL)
+
+    observeEvent(input$tbl_dblclick_meta, {
         req(input$tbl_dblclick_meta)
         meta_dt <- unpack_meta_info(input$tbl_dblclick_meta)
-        print(meta_dt)
 
+        dt <- list(
+            table_name = meta_dt$table_name,
+            row_id = meta_dt$row_id
+        )
+        modal_key(dt)
+    })
+
+    observeEvent(input$model_click_meta, {
+        req(input$model_click_meta)
+        modal_key(input$model_click_meta)
+    })
+
+    modal_details <- reactive({
+        req(modal_key())
+        meta_dt <- modal_key()
+        id_col <- omop_key_columns[[meta_dt$table_name]]
         detail <- con[[meta_dt$table_name]] |> 
-            filter(!!rlang::sym(omop_key_columns[[meta_dt$table_name]]) == meta_dt$row_id) |>
-            collect()
+            filter(!!rlang::sym(id_col) == meta_dt$row_id) |>
+            concept_id_to_concept_name(
+                concept_name = con$concept |> select(concept_id, concept_name),
+                dt_col_names = colnames(con[[meta_dt$table_name]])
+            ) |>
+            collect()|>
+            as.list()
+
+        detail$shiny_table_name <- meta_dt$table_name
         detail
     })
 
     observeEvent(modal_details(), {
-        showModal(modalDialog(
-            title = paste("Person", modal_details()$person_id[1]),
-            uiOutput("item_detail_list"),
-            easyClose = TRUE,
-            size = "l"
+        title <- make_modal_title(modal_details())
+        showModal(
+            modalDialog(
+                title = title,
+                uiOutput("item_detail_list"),
+                easyClose = TRUE,
+                size = "l"
         ))
     })
 
     output$item_detail_list <- renderUI({
         req(modal_details())
         dt <- modal_details()
-        
+        id_col <- omop_key_columns[[dt$shiny_table_name]]
+        dt$person_id <- NULL
+        dt[[id_col]] <- NULL
+
         div(
             lapply(names(dt), function(col_name) {
                 val <- dt[[col_name]]

@@ -7,5 +7,6 @@ duckdbCon <- function(path) {
   for (i in available_tables) {
     con[[i]] <- tbl(dbcon, i)
   }
+  con$dbcon <- dbcon
   con
 }

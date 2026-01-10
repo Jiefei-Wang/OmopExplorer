@@ -37,3 +37,28 @@ unpack_meta_info <- function(meta_string) {
         row_id = as.numeric(parts[3])
     )
 }
+
+
+concept_id_to_concept_name <- function(query, concept_name, dt_col_names) {
+    # map concept_id to its name
+    concept_col_list <- intersect(dt_col_names, names(concept_id_source_value_map))
+    for (col in concept_col_list) {
+        mapped_source_value <- concept_id_source_value_map[[col]]
+        by <- structure("concept_id", names = col)
+        query <- query |>
+            left_join(concept_name, by = by) 
+
+        if (is.null(mapped_source_value)){
+            query <- query |> 
+                mutate(!!sym(col) := paste0(concept_name, " (", !!sym(col), ")")) 
+        } else {
+            query <- query |>
+            mutate(!!sym(col) := case_when(
+                (is.na(!!sym(col)) | !!sym(col) == 0) ~ paste0(!!sym(mapped_source_value), " (0)"),
+                TRUE ~ paste0(concept_name, " (", !!sym(col), ")")
+            ))
+        }
+        query <- query |> select(-concept_name)
+    }
+    query
+}

@@ -134,6 +134,28 @@ make_server_death_DT <- function(input, output, session, con, params){
     })
 }
 
+make_server_provider_DT <- function(input, output, session, con, params){
+    observe({
+        output$provider_DT <- 
+        render_db_DT(
+            params = params,
+            con = con,
+            table_name = "provider",
+            filter_person_id = FALSE)
+    })
+}
+
+make_server_care_site_DT <- function(input, output, session, con, params){
+    observe({
+        output$care_site_DT <- 
+        render_db_DT(
+            params = params,
+            con = con,
+            table_name = "care_site",
+            filter_person_id = FALSE)
+    })
+}
+
 
 
 browser_server <- function(input, output, session, con) {
@@ -178,6 +200,8 @@ browser_server <- function(input, output, session, con) {
     make_server_drug_DT(input, output, session, con, params)
     make_server_note_DT(input, output, session, con, params)
     make_server_death_DT(input, output, session, con, params)
+    make_server_provider_DT(input, output, session, con, params)
+    make_server_care_site_DT(input, output, session, con, params)
     
     make_server_modal(input, output, session, con, params)
 }

@@ -144,8 +144,29 @@ omop_key_columns <- list(
   death = "person_id",
   note = "note_id",
   note_nlp = "note_nlp_id",
-  specimen = "specimen_id"
+  specimen = "specimen_id",
+  provider = "provider_id",
+  care_site = "care_site_id"
 )
+
+omop_key_to_table <- list(
+    person_id = "person",
+    observation_period_id = "observation_period",
+    visit_occurrence_id = "visit_occurrence",
+    visit_detail_id = "visit_detail",
+    condition_occurrence_id = "condition_occurrence",
+    drug_exposure_id = "drug_exposure",
+    procedure_occurrence_id = "procedure_occurrence",
+    device_exposure_id = "device_exposure",
+    measurement_id = "measurement",
+    observation_id = "observation",
+    note_id = "note",
+    note_nlp_id = "note_nlp",
+    specimen_id = "specimen",
+    provider_id = "provider",
+    care_site_id = "care_site"
+)
+
 
 omop_show_columns <- list(
   person = c("person_id", "birth_date", "gender_concept_id", "race_concept_id", "ethnicity_concept_id"),
@@ -202,3 +223,5 @@ omop_show_columns <- list(
     "cause_concept_id"
   )
 )
+
+

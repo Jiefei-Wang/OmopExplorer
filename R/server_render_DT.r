@@ -65,25 +65,7 @@ sql_dt_filter <- function(remote_tbl, concept_name, post_process_pipe, table_nam
             filter(shiny_row_idx > start & shiny_row_idx <= start + len)
 
         # map concept_id to its name
-        concept_col_list <- intersect(dt_col_names, names(concept_id_source_value_map))
-        for (col in concept_col_list) {
-            mapped_source_value <- concept_id_source_value_map[[col]]
-            by <- structure("concept_id", names = col)
-            query <- query |>
-                left_join(concept_name, by = by) 
-
-            if (is.null(mapped_source_value)){
-                query <- query |> 
-                    mutate(!!sym(col) := paste0(!!sym(col), ": ", concept_name)) 
-            } else {
-                query <- query |>
-                mutate(!!sym(col) := case_when(
-                    (is.na(!!sym(col)) | !!sym(col) == 0) ~ !!sym(mapped_source_value),
-                    TRUE ~ paste0(!!sym(col), ": ", concept_name)
-                ))
-            }
-            query <- query |> select(-concept_name)
-        }
+        # query <- concept_id_to_concept_name(query, concept_name, dt_col_names)
 
         # additional processing and select variables
         show_columns <- omop_show_columns[[table_name]]

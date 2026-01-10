@@ -38,6 +38,16 @@ death_list_ui <- nav_panel(
     DTOutput("death_DT")
 )
 
+provider_list_ui <- nav_panel(
+    "Provider",
+    DTOutput("provider_DT")
+)
+
+care_site_list_ui <- nav_panel(
+    "Care Site",
+    DTOutput("care_site_DT")
+)
+
 sidebar_ui <- sidebar(
     title = "Filters",
     id = "sidebar",
@@ -68,6 +78,8 @@ browser_ui <- page_sidebar(
     measurement_list_ui,
     drug_list_ui,
     note_list_ui,
-    death_list_ui
+    death_list_ui,
+    provider_list_ui,
+    care_site_list_ui
   )
 )
