@@ -53,13 +53,7 @@ sidebar_ui <- sidebar(
     id = "sidebar",
     collapsed = TRUE,
     # person id filter
-    numericInput("sidebar_person_id_filter", "Person ID", value = ""),
-    # date range filter
-    dateRangeInput(
-        "sidebar_date_range_filter", "Date Range",
-        start = "0000-01-01",
-        end = "9999-12-31"
-    )
+    textInput(inputId = "sidebar_table_filter", label = "Search Anything", value = "")
 
 )
 

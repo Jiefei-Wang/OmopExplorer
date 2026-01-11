@@ -13,7 +13,7 @@ system.time({
         filter(shiny_row_idx > start & shiny_row_idx <= start + 1000)|>
         collect() ->dt
         columns <- colnames(con$measurement)
-        mapped_cols <- intersect(columns, names(concept_id_source_value_map))
+        mapped_cols <- intersect(columns, names(omop_concept_id_source_value_map))
 
         for (col in mapped_cols){
             concept_ids <- dt[[col]]

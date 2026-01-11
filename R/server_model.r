@@ -34,7 +34,7 @@ make_modal_title <- function(detail_list){
 
 
 
-make_server_modal <- function(input, output, session, con, params){
+register_server_modal <- function(input, output, session, con, params){
     modal_key <- reactiveVal(NULL)
 
     observeEvent(input$tbl_dblclick_meta, {
@@ -48,9 +48,9 @@ make_server_modal <- function(input, output, session, con, params){
         modal_key(dt)
     })
 
-    observeEvent(input$model_click_meta, {
-        req(input$model_click_meta)
-        modal_key(input$model_click_meta)
+    observeEvent(input$modal_click_meta, {
+        req(input$modal_click_meta)
+        modal_key(input$modal_click_meta)
     })
 
     modal_details <- reactive({
@@ -61,7 +61,8 @@ make_server_modal <- function(input, output, session, con, params){
             filter(!!rlang::sym(id_col) == meta_dt$row_id) |>
             concept_id_to_concept_name(
                 concept_name = con$concept |> select(concept_id, concept_name),
-                dt_col_names = colnames(con[[meta_dt$table_name]])
+                table_name = meta_dt$table_name,
+                tbl_all_cols = colnames(con[[meta_dt$table_name]])
             ) |>
             collect()|>
             as.list()

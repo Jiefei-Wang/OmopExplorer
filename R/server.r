@@ -1,15 +1,11 @@
 
-make_server_person_DT <- function(input, output, session, con, params){
-    select_pipi <- \(x) x|> 
-        mutate(birth_date = as.Date(birth_datetime))
-        
+register_server_person_DT <- function(input, output, session, con, params){
     observe({
         output$person_DT <- render_db_DT(
             params = params,
             con = con,
             table_name = "person",
             filter_person_id = FALSE,
-            post_process_pipe = select_pipi,
             additional_callback  = "
                 var person_selectedRow = null;
                 table.on('click.dt', 'tbody tr', function () {
@@ -42,7 +38,7 @@ make_server_person_DT <- function(input, output, session, con, params){
 
 
 
-make_server_visit_DT <- function(input, output, session, con, params){
+register_server_visit_DT <- function(input, output, session, con, params){
     observe({
         output$visit_DT <- 
         render_db_DT(
@@ -55,7 +51,7 @@ make_server_visit_DT <- function(input, output, session, con, params){
 
 
 
-make_server_condition_DT <- function(input, output, session, con, params){
+register_server_condition_DT <- function(input, output, session, con, params){
     observe({
         output$condition_DT <- 
         render_db_DT(
@@ -68,7 +64,7 @@ make_server_condition_DT <- function(input, output, session, con, params){
 
 
 
-make_server_procedure_DT <- function(input, output, session, con, params){
+register_server_procedure_DT <- function(input, output, session, con, params){
     observe({
         output$procedure_DT <- 
         render_db_DT(
@@ -81,7 +77,7 @@ make_server_procedure_DT <- function(input, output, session, con, params){
 
 
 
-make_server_measurement_DT <- function(input, output, session, con, params){
+register_server_measurement_DT <- function(input, output, session, con, params){
     observe({
         output$measurement_DT <- 
         render_db_DT(
@@ -94,7 +90,7 @@ make_server_measurement_DT <- function(input, output, session, con, params){
 
 
 
-make_server_drug_DT <- function(input, output, session, con, params){
+register_server_drug_DT <- function(input, output, session, con, params){
     observe({
         output$drug_DT <- 
         render_db_DT(
@@ -107,7 +103,7 @@ make_server_drug_DT <- function(input, output, session, con, params){
 
 
 
-make_server_note_DT <- function(input, output, session, con, params){
+register_server_note_DT <- function(input, output, session, con, params){
     select_pipe <- \(x) x |>
         mutate(note_text_preview = substr(note_text, 1, 100)) 
     observe({
@@ -123,7 +119,7 @@ make_server_note_DT <- function(input, output, session, con, params){
 
 
 
-make_server_death_DT <- function(input, output, session, con, params){
+register_server_death_DT <- function(input, output, session, con, params){
     observe({
         output$death_DT <- 
         render_db_DT(
@@ -134,7 +130,7 @@ make_server_death_DT <- function(input, output, session, con, params){
     })
 }
 
-make_server_provider_DT <- function(input, output, session, con, params){
+register_server_provider_DT <- function(input, output, session, con, params){
     observe({
         output$provider_DT <- 
         render_db_DT(
@@ -145,7 +141,7 @@ make_server_provider_DT <- function(input, output, session, con, params){
     })
 }
 
-make_server_care_site_DT <- function(input, output, session, con, params){
+register_server_care_site_DT <- function(input, output, session, con, params){
     observe({
         output$care_site_DT <- 
         render_db_DT(
@@ -156,28 +152,42 @@ make_server_care_site_DT <- function(input, output, session, con, params){
     })
 }
 
-
+register_server_sidebar <- function(input, output, session, con, params){
+    observe({
+        # Update date range filter based on data
+        date_range <- con$person |>
+            summarise(
+                min_date = min(birth_datetime, na.rm = TRUE),
+                max_date = max(birth_datetime, na.rm = TRUE)
+            ) |>
+            collect()
+        
+        updateDateRangeInput(
+            session,
+            "sidebar_date_range_filter",
+            start = as.Date(date_range$min_date),
+            end = as.Date(date_range$max_date),
+            min = as.Date(date_range$min_date),
+            max = as.Date(date_range$max_date)
+        )
+    })
+}
 
 browser_server <- function(input, output, session, con) {
     params <- list()
-    # Use reactiveVal to store the selected person ID
-    params$start_date <- reactive({
-        as.Date(input$sidebar_date_range_filter[1])
-    })
-    params$end_date <- reactive({
-        as.Date(input$sidebar_date_range_filter[2])
+    params$global_search_value <- debounce(
+        reactive({
+            print("update")
+            input$sidebar_table_filter
+        }),
+        millis = 2000  # 1 second delay
+    )
+
+    params$visible_table_name <- reactiveVal("person")
+    observe({
+        print(paste("Visible table:", params$visible_table_name()))
     })
     
-    # Debug: Print when date range changes
-    observeEvent(params$start_date(), {
-        print(paste("Start date:", params$start_date()))
-        print(paste("End date:", params$end_date()))
-    })
-
-    
-    con$concept_name <- con$concept |> 
-        select(concept_id, concept_name) 
-
     target_person_id <- reactiveVal(NA)
     params$target_person_id <- target_person_id
     # Update UI filter when table row is clicked
@@ -187,23 +197,19 @@ browser_server <- function(input, output, session, con) {
         target_person_id(toNum(meta_dt$person_id))
     })
     
-    # Update param when UI filter changes
-    observeEvent(input$sidebar_person_id_filter, {
-        target_person_id(toNum(input$sidebar_person_id_filter))
-    })
 
-    make_server_person_DT(input, output, session, con, params)
-    make_server_visit_DT(input, output, session, con, params)
-    make_server_condition_DT(input, output, session, con, params)
-    make_server_procedure_DT(input, output, session, con, params)
-    make_server_measurement_DT(input, output, session, con, params)
-    make_server_drug_DT(input, output, session, con, params)
-    make_server_note_DT(input, output, session, con, params)
-    make_server_death_DT(input, output, session, con, params)
-    make_server_provider_DT(input, output, session, con, params)
-    make_server_care_site_DT(input, output, session, con, params)
+    register_server_person_DT(input, output, session, con, params)
+    register_server_visit_DT(input, output, session, con, params)
+    register_server_condition_DT(input, output, session, con, params)
+    register_server_procedure_DT(input, output, session, con, params)
+    register_server_measurement_DT(input, output, session, con, params)
+    register_server_drug_DT(input, output, session, con, params)
+    register_server_note_DT(input, output, session, con, params)
+    register_server_death_DT(input, output, session, con, params)
+    register_server_provider_DT(input, output, session, con, params)
+    register_server_care_site_DT(input, output, session, con, params)
     
-    make_server_modal(input, output, session, con, params)
+    register_server_modal(input, output, session, con, params)
 }
 
 
