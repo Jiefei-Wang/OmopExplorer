@@ -10,7 +10,6 @@ omop <- local({
   result
 })
 
-
 omop_concept_id_columns <- local({
   result <- list()
   for (table_name in names(omop)) {
@@ -85,6 +84,21 @@ omop_key_to_table <- list(
 )
 
 
+
+omop_panes <- list(
+  list(display_name = "Person", table_name = "person"),
+  list(display_name = "Visit", table_name = "visit_occurrence"),
+  list(display_name = "Condition", table_name = "condition_occurrence"),
+  list(display_name = "Procedure", table_name = "procedure_occurrence"),
+  list(display_name = "Measurement", table_name = "measurement"),
+  list(display_name = "Drug", table_name = "drug_exposure"),
+  list(display_name = "Note", table_name = "note"),
+  list(display_name = "Death", table_name = "death"),
+  list(display_name = "Provider", table_name = "provider"),
+  list(display_name = "Care Site", table_name = "care_site")
+)
+
+
 omop_show_columns <- list(
   person = c("person_id", "birth_datetime", "gender_concept_id", "race_concept_id", "ethnicity_concept_id"),
 
@@ -140,4 +154,3 @@ omop_show_columns <- list(
     "cause_concept_id"
   )
 )
-

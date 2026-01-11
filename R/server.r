@@ -40,7 +40,7 @@ register_server_person_DT <- function(input, output, session, con, params){
 
 register_server_visit_DT <- function(input, output, session, con, params){
     observe({
-        output$visit_DT <- 
+        output$visit_occurrence_DT <- 
         render_db_DT(
             params = params,
             con = con,
@@ -53,7 +53,7 @@ register_server_visit_DT <- function(input, output, session, con, params){
 
 register_server_condition_DT <- function(input, output, session, con, params){
     observe({
-        output$condition_DT <- 
+        output$condition_occurrence_DT <- 
         render_db_DT(
             params = params,
             con = con,
@@ -66,7 +66,7 @@ register_server_condition_DT <- function(input, output, session, con, params){
 
 register_server_procedure_DT <- function(input, output, session, con, params){
     observe({
-        output$procedure_DT <- 
+        output$procedure_occurrence_DT <- 
         render_db_DT(
             params = params,
             con = con,
@@ -92,7 +92,7 @@ register_server_measurement_DT <- function(input, output, session, con, params){
 
 register_server_drug_DT <- function(input, output, session, con, params){
     observe({
-        output$drug_DT <- 
+        output$drug_exposure_DT <- 
         render_db_DT(
             params = params,
             con = con,
@@ -184,10 +184,13 @@ browser_server <- function(input, output, session, con) {
     )
 
     params$visible_table_name <- reactiveVal("person")
-    observe({
-        print(paste("Visible table:", params$visible_table_name()))
-    })
     
+    # Update visible_table_name when tab changes
+    observeEvent(input$main_tabs, {
+        params$visible_table_name(input$main_tabs)
+        print(paste("Visible table:", input$main_tabs))
+    })
+
     target_person_id <- reactiveVal(NA)
     params$target_person_id <- target_person_id
     # Update UI filter when table row is clicked
