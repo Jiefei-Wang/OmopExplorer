@@ -7,4 +7,5 @@
 #' @import duckdb
 #' @import dbplyr
 #' @importFrom glue glue
+#' @importFrom yaml read_yaml
 NULL

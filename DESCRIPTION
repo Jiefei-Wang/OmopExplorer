@@ -18,4 +18,5 @@ Imports:
     DT,
     duckdb,
     dbplyr,
-    glue
+    glue,
+    yaml

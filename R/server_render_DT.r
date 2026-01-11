@@ -64,8 +64,13 @@ sql_dt_filter <- function(remote_tbl, concept_name, post_process_pipe, table_nam
         query <- query |>
             filter(shiny_row_idx > start & shiny_row_idx <= start + len)
 
+        # print("before adding concept names")
+        # print(query|>show_query())
         # map concept_id to its name
-        # query <- concept_id_to_concept_name(query, concept_name, dt_col_names)
+        query <- concept_id_to_concept_name(query, concept_name, dt_col_names)
+        # print("after adding concept names")
+        # print(query|>show_query())
+
 
         # additional processing and select variables
         show_columns <- omop_show_columns[[table_name]]

@@ -1,0 +1,1927 @@
+person:
+  - column: person_id
+    type: integer
+    primary_key: true
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: gender_concept_id
+    type: integer
+    primary_key: false
+    source_name_column: gender_source_value
+    foreign_table: concept
+    foreign_column: concept_id
+  - column: year_of_birth
+    type: integer
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: month_of_birth
+    type: integer
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: day_of_birth
+    type: integer
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: birth_datetime
+    type: POSIXct
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: race_concept_id
+    type: integer
+    primary_key: false
+    source_name_column: race_source_value
+    foreign_table: concept
+    foreign_column: concept_id
+  - column: ethnicity_concept_id
+    type: integer
+    primary_key: false
+    source_name_column: ethnicity_source_value
+    foreign_table: concept
+    foreign_column: concept_id
+  - column: location_id
+    type: integer
+    primary_key: false
+    source_name_column: null
+    foreign_table: location
+    foreign_column: location_id
+  - column: provider_id
+    type: integer
+    primary_key: false
+    source_name_column: null
+    foreign_table: provider
+    foreign_column: provider_id
+  - column: care_site_id
+    type: integer
+    primary_key: false
+    source_name_column: null
+    foreign_table: care_site
+    foreign_column: care_site_id
+  - column: person_source_value
+    type: character
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: gender_source_value
+    type: character
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: gender_source_concept_id
+    type: integer
+    primary_key: false
+    source_name_column: null
+    foreign_table: concept
+    foreign_column: concept_id
+  - column: race_source_value
+    type: character
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: race_source_concept_id
+    type: integer
+    primary_key: false
+    source_name_column: null
+    foreign_table: concept
+    foreign_column: concept_id
+  - column: ethnicity_source_value
+    type: character
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: ethnicity_source_concept_id
+    type: integer
+    primary_key: false
+    source_name_column: null
+    foreign_table: concept
+    foreign_column: concept_id
+
+observation_period:
+  - column: observation_period_id
+    type: integer
+    primary_key: true
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: person_id
+    type: integer
+    primary_key: false
+    source_name_column: null
+    foreign_table: person
+    foreign_column: person_id
+  - column: observation_period_start_date
+    type: Date
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: observation_period_end_date
+    type: Date
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: period_type_concept_id
+    type: integer
+    primary_key: false
+    source_name_column: null
+    foreign_table: concept
+    foreign_column: concept_id
+
+visit_occurrence:
+  - column: visit_occurrence_id
+    type: integer
+    primary_key: true
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: person_id
+    type: integer
+    primary_key: false
+    source_name_column: null
+    foreign_table: person
+    foreign_column: person_id
+  - column: visit_concept_id
+    type: integer
+    primary_key: false
+    source_name_column: visit_source_value
+    foreign_table: concept
+    foreign_column: concept_id
+  - column: visit_start_date
+    type: Date
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: visit_start_datetime
+    type: POSIXct
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: visit_end_date
+    type: Date
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: visit_end_datetime
+    type: POSIXct
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: visit_type_concept_id
+    type: integer
+    primary_key: false
+    source_name_column: null
+    foreign_table: concept
+    foreign_column: concept_id
+  - column: provider_id
+    type: integer
+    primary_key: false
+    source_name_column: null
+    foreign_table: provider
+    foreign_column: provider_id
+  - column: care_site_id
+    type: integer
+    primary_key: false
+    source_name_column: null
+    foreign_table: care_site
+    foreign_column: care_site_id
+  - column: visit_source_value
+    type: character
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: visit_source_concept_id
+    type: integer
+    primary_key: false
+    source_name_column: null
+    foreign_table: concept
+    foreign_column: concept_id
+  - column: admitted_from_concept_id
+    type: integer
+    primary_key: false
+    source_name_column: admitted_from_source_value
+    foreign_table: concept
+    foreign_column: concept_id
+  - column: admitted_from_source_value
+    type: character
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: discharged_to_concept_id
+    type: integer
+    primary_key: false
+    source_name_column: discharged_to_source_value
+    foreign_table: concept
+    foreign_column: concept_id
+  - column: discharged_to_source_value
+    type: character
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: preceding_visit_occurrence_id
+    type: integer
+    primary_key: false
+    source_name_column: null
+    foreign_table: visit_occurrence
+    foreign_column: visit_occurrence_id
+
+visit_detail:
+  - column: visit_detail_id
+    type: integer
+    primary_key: true
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: person_id
+    type: integer
+    primary_key: false
+    source_name_column: null
+    foreign_table: person
+    foreign_column: person_id
+  - column: visit_detail_concept_id
+    type: integer
+    primary_key: false
+    source_name_column: visit_detail_source_value
+    foreign_table: concept
+    foreign_column: concept_id
+  - column: visit_detail_start_date
+    type: Date
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: visit_detail_start_datetime
+    type: POSIXct
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: visit_detail_end_date
+    type: Date
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: visit_detail_end_datetime
+    type: POSIXct
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: visit_detail_type_concept_id
+    type: integer
+    primary_key: false
+    source_name_column: null
+    foreign_table: concept
+    foreign_column: concept_id
+  - column: provider_id
+    type: integer
+    primary_key: false
+    source_name_column: null
+    foreign_table: provider
+    foreign_column: provider_id
+  - column: care_site_id
+    type: integer
+    primary_key: false
+    source_name_column: null
+    foreign_table: care_site
+    foreign_column: care_site_id
+  - column: visit_detail_source_value
+    type: character
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: visit_detail_source_concept_id
+    type: integer
+    primary_key: false
+    source_name_column: null
+    foreign_table: concept
+    foreign_column: concept_id
+  - column: admitted_from_concept_id
+    type: integer
+    primary_key: false
+    source_name_column: admitted_from_source_value
+    foreign_table: concept
+    foreign_column: concept_id
+  - column: admitted_from_source_value
+    type: character
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: discharged_to_concept_id
+    type: integer
+    primary_key: false
+    source_name_column: discharged_to_source_value
+    foreign_table: concept
+    foreign_column: concept_id
+  - column: discharged_to_source_value
+    type: character
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: preceding_visit_detail_id
+    type: integer
+    primary_key: false
+    source_name_column: null
+    foreign_table: visit_detail
+    foreign_column: visit_detail_id
+  - column: parent_visit_detail_id
+    type: integer
+    primary_key: false
+    source_name_column: null
+    foreign_table: visit_detail
+    foreign_column: visit_detail_id
+  - column: visit_occurrence_id
+    type: integer
+    primary_key: false
+    source_name_column: null
+    foreign_table: visit_occurrence
+    foreign_column: visit_occurrence_id
+
+condition_occurrence:
+  - column: condition_occurrence_id
+    type: integer
+    primary_key: true
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: person_id
+    type: integer
+    primary_key: false
+    source_name_column: null
+    foreign_table: person
+    foreign_column: person_id
+  - column: condition_concept_id
+    type: integer
+    primary_key: false
+    source_name_column: condition_source_value
+    foreign_table: concept
+    foreign_column: concept_id
+  - column: condition_start_date
+    type: Date
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: condition_start_datetime
+    type: POSIXct
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: condition_end_date
+    type: Date
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: condition_end_datetime
+    type: POSIXct
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: condition_type_concept_id
+    type: integer
+    primary_key: false
+    source_name_column: null
+    foreign_table: concept
+    foreign_column: concept_id
+  - column: condition_status_concept_id
+    type: integer
+    primary_key: false
+    source_name_column: condition_status_source_value
+    foreign_table: concept
+    foreign_column: concept_id
+  - column: stop_reason
+    type: character
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: provider_id
+    type: integer
+    primary_key: false
+    source_name_column: null
+    foreign_table: provider
+    foreign_column: provider_id
+  - column: visit_occurrence_id
+    type: integer
+    primary_key: false
+    source_name_column: null
+    foreign_table: visit_occurrence
+    foreign_column: visit_occurrence_id
+  - column: visit_detail_id
+    type: integer
+    primary_key: false
+    source_name_column: null
+    foreign_table: visit_detail
+    foreign_column: visit_detail_id
+  - column: condition_source_value
+    type: character
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: condition_source_concept_id
+    type: integer
+    primary_key: false
+    source_name_column: null
+    foreign_table: concept
+    foreign_column: concept_id
+  - column: condition_status_source_value
+    type: character
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+
+drug_exposure:
+  - column: drug_exposure_id
+    type: integer
+    primary_key: true
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: person_id
+    type: integer
+    primary_key: false
+    source_name_column: null
+    foreign_table: person
+    foreign_column: person_id
+  - column: drug_concept_id
+    type: integer
+    primary_key: false
+    source_name_column: drug_source_value
+    foreign_table: concept
+    foreign_column: concept_id
+  - column: drug_exposure_start_date
+    type: Date
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: drug_exposure_start_datetime
+    type: POSIXct
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: drug_exposure_end_date
+    type: Date
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: drug_exposure_end_datetime
+    type: POSIXct
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: verbatim_end_date
+    type: Date
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: drug_type_concept_id
+    type: integer
+    primary_key: false
+    source_name_column: null
+    foreign_table: concept
+    foreign_column: concept_id
+  - column: stop_reason
+    type: character
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: refills
+    type: integer
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: quantity
+    type: numeric
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: days_supply
+    type: integer
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: sig
+    type: character
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: route_concept_id
+    type: integer
+    primary_key: false
+    source_name_column: route_source_value
+    foreign_table: concept
+    foreign_column: concept_id
+  - column: lot_number
+    type: character
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: provider_id
+    type: integer
+    primary_key: false
+    source_name_column: null
+    foreign_table: provider
+    foreign_column: provider_id
+  - column: visit_occurrence_id
+    type: integer
+    primary_key: false
+    source_name_column: null
+    foreign_table: visit_occurrence
+    foreign_column: visit_occurrence_id
+  - column: visit_detail_id
+    type: integer
+    primary_key: false
+    source_name_column: null
+    foreign_table: visit_detail
+    foreign_column: visit_detail_id
+  - column: drug_source_value
+    type: character
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: drug_source_concept_id
+    type: integer
+    primary_key: false
+    source_name_column: null
+    foreign_table: concept
+    foreign_column: concept_id
+  - column: route_source_value
+    type: character
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: dose_unit_source_value
+    type: character
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+
+procedure_occurrence:
+  - column: procedure_occurrence_id
+    type: integer
+    primary_key: true
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: person_id
+    type: integer
+    primary_key: false
+    source_name_column: null
+    foreign_table: person
+    foreign_column: person_id
+  - column: procedure_concept_id
+    type: integer
+    primary_key: false
+    source_name_column: procedure_source_value
+    foreign_table: concept
+    foreign_column: concept_id
+  - column: procedure_date
+    type: Date
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: procedure_datetime
+    type: POSIXct
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: procedure_end_date
+    type: Date
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: procedure_end_datetime
+    type: POSIXct
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: procedure_type_concept_id
+    type: integer
+    primary_key: false
+    source_name_column: null
+    foreign_table: concept
+    foreign_column: concept_id
+  - column: modifier_concept_id
+    type: integer
+    primary_key: false
+    source_name_column: modifier_source_value
+    foreign_table: concept
+    foreign_column: concept_id
+  - column: quantity
+    type: integer
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: provider_id
+    type: integer
+    primary_key: false
+    source_name_column: null
+    foreign_table: provider
+    foreign_column: provider_id
+  - column: visit_occurrence_id
+    type: integer
+    primary_key: false
+    source_name_column: null
+    foreign_table: visit_occurrence
+    foreign_column: visit_occurrence_id
+  - column: visit_detail_id
+    type: integer
+    primary_key: false
+    source_name_column: null
+    foreign_table: visit_detail
+    foreign_column: visit_detail_id
+  - column: procedure_source_value
+    type: character
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: procedure_source_concept_id
+    type: integer
+    primary_key: false
+    source_name_column: null
+    foreign_table: concept
+    foreign_column: concept_id
+  - column: modifier_source_value
+    type: character
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+
+device_exposure:
+  - column: device_exposure_id
+    type: integer
+    primary_key: true
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: person_id
+    type: integer
+    primary_key: false
+    source_name_column: null
+    foreign_table: person
+    foreign_column: person_id
+  - column: device_concept_id
+    type: integer
+    primary_key: false
+    source_name_column: device_source_value
+    foreign_table: concept
+    foreign_column: concept_id
+  - column: device_exposure_start_date
+    type: Date
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: device_exposure_start_datetime
+    type: POSIXct
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: device_exposure_end_date
+    type: Date
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: device_exposure_end_datetime
+    type: POSIXct
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: device_type_concept_id
+    type: integer
+    primary_key: false
+    source_name_column: null
+    foreign_table: concept
+    foreign_column: concept_id
+  - column: unique_device_id
+    type: character
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: production_id
+    type: character
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: quantity
+    type: integer
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: provider_id
+    type: integer
+    primary_key: false
+    source_name_column: null
+    foreign_table: provider
+    foreign_column: provider_id
+  - column: visit_occurrence_id
+    type: integer
+    primary_key: false
+    source_name_column: null
+    foreign_table: visit_occurrence
+    foreign_column: visit_occurrence_id
+  - column: visit_detail_id
+    type: integer
+    primary_key: false
+    source_name_column: null
+    foreign_table: visit_detail
+    foreign_column: visit_detail_id
+  - column: device_source_value
+    type: character
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: device_source_concept_id
+    type: integer
+    primary_key: false
+    source_name_column: null
+    foreign_table: concept
+    foreign_column: concept_id
+  - column: unit_concept_id
+    type: integer
+    primary_key: false
+    source_name_column: unit_source_value
+    foreign_table: concept
+    foreign_column: concept_id
+  - column: unit_source_value
+    type: character
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: unit_source_concept_id
+    type: integer
+    primary_key: false
+    source_name_column: null
+    foreign_table: concept
+    foreign_column: concept_id
+
+measurement:
+  - column: measurement_id
+    type: integer
+    primary_key: true
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: person_id
+    type: integer
+    primary_key: false
+    source_name_column: null
+    foreign_table: person
+    foreign_column: person_id
+  - column: measurement_concept_id
+    type: integer
+    primary_key: false
+    source_name_column: measurement_source_value
+    foreign_table: concept
+    foreign_column: concept_id
+  - column: measurement_date
+    type: Date
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: measurement_datetime
+    type: POSIXct
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: measurement_time
+    type: character
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: measurement_type_concept_id
+    type: integer
+    primary_key: false
+    source_name_column: null
+    foreign_table: concept
+    foreign_column: concept_id
+  - column: operator_concept_id
+    type: integer
+    primary_key: false
+    source_name_column: null
+    foreign_table: concept
+    foreign_column: concept_id
+  - column: value_as_number
+    type: numeric
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: value_as_concept_id
+    type: integer
+    primary_key: false
+    source_name_column: value_source_value
+    foreign_table: concept
+    foreign_column: concept_id
+  - column: unit_concept_id
+    type: integer
+    primary_key: false
+    source_name_column: unit_source_value
+    foreign_table: concept
+    foreign_column: concept_id
+  - column: range_low
+    type: numeric
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: range_high
+    type: numeric
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: provider_id
+    type: integer
+    primary_key: false
+    source_name_column: null
+    foreign_table: provider
+    foreign_column: provider_id
+  - column: visit_occurrence_id
+    type: integer
+    primary_key: false
+    source_name_column: null
+    foreign_table: visit_occurrence
+    foreign_column: visit_occurrence_id
+  - column: visit_detail_id
+    type: integer
+    primary_key: false
+    source_name_column: null
+    foreign_table: visit_detail
+    foreign_column: visit_detail_id
+  - column: measurement_source_value
+    type: character
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: measurement_source_concept_id
+    type: integer
+    primary_key: false
+    source_name_column: null
+    foreign_table: concept
+    foreign_column: concept_id
+  - column: unit_source_value
+    type: character
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: unit_source_concept_id
+    type: integer
+    primary_key: false
+    source_name_column: null
+    foreign_table: concept
+    foreign_column: concept_id
+  - column: value_source_value
+    type: character
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: measurement_event_id
+    type: integer
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: meas_event_field_concept_id
+    type: integer
+    primary_key: false
+    source_name_column: null
+    foreign_table: concept
+    foreign_column: concept_id
+
+observation:
+  - column: observation_id
+    type: integer
+    primary_key: true
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: person_id
+    type: integer
+    primary_key: false
+    source_name_column: null
+    foreign_table: person
+    foreign_column: person_id
+  - column: observation_concept_id
+    type: integer
+    primary_key: false
+    source_name_column: observation_source_value
+    foreign_table: concept
+    foreign_column: concept_id
+  - column: observation_date
+    type: Date
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: observation_datetime
+    type: POSIXct
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: observation_type_concept_id
+    type: integer
+    primary_key: false
+    source_name_column: null
+    foreign_table: concept
+    foreign_column: concept_id
+  - column: value_as_number
+    type: numeric
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: value_as_string
+    type: character
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: value_as_concept_id
+    type: integer
+    primary_key: false
+    source_name_column: value_source_value
+    foreign_table: concept
+    foreign_column: concept_id
+  - column: qualifier_concept_id
+    type: integer
+    primary_key: false
+    source_name_column: qualifier_source_value
+    foreign_table: concept
+    foreign_column: concept_id
+  - column: unit_concept_id
+    type: integer
+    primary_key: false
+    source_name_column: unit_source_value
+    foreign_table: concept
+    foreign_column: concept_id
+  - column: provider_id
+    type: integer
+    primary_key: false
+    source_name_column: null
+    foreign_table: provider
+    foreign_column: provider_id
+  - column: visit_occurrence_id
+    type: integer
+    primary_key: false
+    source_name_column: null
+    foreign_table: visit_occurrence
+    foreign_column: visit_occurrence_id
+  - column: visit_detail_id
+    type: integer
+    primary_key: false
+    source_name_column: null
+    foreign_table: visit_detail
+    foreign_column: visit_detail_id
+  - column: observation_source_value
+    type: character
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: observation_source_concept_id
+    type: integer
+    primary_key: false
+    source_name_column: null
+    foreign_table: concept
+    foreign_column: concept_id
+  - column: unit_source_value
+    type: character
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: qualifier_source_value
+    type: character
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: value_source_value
+    type: character
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: observation_event_id
+    type: integer
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: obs_event_field_concept_id
+    type: integer
+    primary_key: false
+    source_name_column: null
+    foreign_table: concept
+    foreign_column: concept_id
+
+death:
+  - column: person_id
+    type: integer
+    primary_key: true
+    source_name_column: null
+    foreign_table: person
+    foreign_column: person_id
+  - column: death_date
+    type: Date
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: death_datetime
+    type: POSIXct
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: death_type_concept_id
+    type: integer
+    primary_key: false
+    source_name_column: null
+    foreign_table: concept
+    foreign_column: concept_id
+  - column: cause_concept_id
+    type: integer
+    primary_key: false
+    source_name_column: cause_source_value
+    foreign_table: concept
+    foreign_column: concept_id
+  - column: cause_source_value
+    type: character
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: cause_source_concept_id
+    type: integer
+    primary_key: false
+    source_name_column: null
+    foreign_table: concept
+    foreign_column: concept_id
+
+note:
+  - column: note_id
+    type: integer
+    primary_key: true
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: person_id
+    type: integer
+    primary_key: false
+    source_name_column: null
+    foreign_table: person
+    foreign_column: person_id
+  - column: note_date
+    type: Date
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: note_datetime
+    type: POSIXct
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: note_type_concept_id
+    type: integer
+    primary_key: false
+    source_name_column: null
+    foreign_table: concept
+    foreign_column: concept_id
+  - column: note_class_concept_id
+    type: integer
+    primary_key: false
+    source_name_column: note_source_value
+    foreign_table: concept
+    foreign_column: concept_id
+  - column: note_title
+    type: character
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: note_text
+    type: character
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: encoding_concept_id
+    type: integer
+    primary_key: false
+    source_name_column: null
+    foreign_table: concept
+    foreign_column: concept_id
+  - column: language_concept_id
+    type: integer
+    primary_key: false
+    source_name_column: null
+    foreign_table: concept
+    foreign_column: concept_id
+  - column: provider_id
+    type: integer
+    primary_key: false
+    source_name_column: null
+    foreign_table: provider
+    foreign_column: provider_id
+  - column: visit_occurrence_id
+    type: integer
+    primary_key: false
+    source_name_column: null
+    foreign_table: visit_occurrence
+    foreign_column: visit_occurrence_id
+  - column: visit_detail_id
+    type: integer
+    primary_key: false
+    source_name_column: null
+    foreign_table: visit_detail
+    foreign_column: visit_detail_id
+  - column: note_source_value
+    type: character
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: note_event_id
+    type: integer
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: note_event_field_concept_id
+    type: integer
+    primary_key: false
+    source_name_column: null
+    foreign_table: concept
+    foreign_column: concept_id
+
+specimen:
+  - column: specimen_id
+    type: integer
+    primary_key: true
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: person_id
+    type: integer
+    primary_key: false
+    source_name_column: null
+    foreign_table: person
+    foreign_column: person_id
+  - column: specimen_concept_id
+    type: integer
+    primary_key: false
+    source_name_column: specimen_source_value
+    foreign_table: concept
+    foreign_column: concept_id
+  - column: specimen_type_concept_id
+    type: integer
+    primary_key: false
+    source_name_column: null
+    foreign_table: concept
+    foreign_column: concept_id
+  - column: specimen_date
+    type: Date
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: specimen_datetime
+    type: POSIXct
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: quantity
+    type: numeric
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: unit_concept_id
+    type: integer
+    primary_key: false
+    source_name_column: unit_source_value
+    foreign_table: concept
+    foreign_column: concept_id
+  - column: anatomic_site_concept_id
+    type: integer
+    primary_key: false
+    source_name_column: anatomic_site_source_value
+    foreign_table: concept
+    foreign_column: concept_id
+  - column: disease_status_concept_id
+    type: integer
+    primary_key: false
+    source_name_column: disease_status_source_value
+    foreign_table: concept
+    foreign_column: concept_id
+  - column: specimen_source_id
+    type: character
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: specimen_source_value
+    type: character
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: unit_source_value
+    type: character
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: anatomic_site_source_value
+    type: character
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: disease_status_source_value
+    type: character
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+
+location:
+  - column: location_id
+    type: integer
+    primary_key: true
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: address_1
+    type: character
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: address_2
+    type: character
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: city
+    type: character
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: state
+    type: character
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: zip
+    type: character
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: county
+    type: character
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: location_source_value
+    type: character
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: country_concept_id
+    type: integer
+    primary_key: false
+    source_name_column: country_source_value
+    foreign_table: concept
+    foreign_column: concept_id
+  - column: country_source_value
+    type: character
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: latitude
+    type: numeric
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: longitude
+    type: numeric
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+
+care_site:
+  - column: care_site_id
+    type: integer
+    primary_key: true
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: care_site_name
+    type: character
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: place_of_service_concept_id
+    type: integer
+    primary_key: false
+    source_name_column: place_of_service_source_value
+    foreign_table: concept
+    foreign_column: concept_id
+  - column: location_id
+    type: integer
+    primary_key: false
+    source_name_column: null
+    foreign_table: location
+    foreign_column: location_id
+  - column: care_site_source_value
+    type: character
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: place_of_service_source_value
+    type: character
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+
+provider:
+  - column: provider_id
+    type: integer
+    primary_key: true
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: provider_name
+    type: character
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: npi
+    type: character
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: dea
+    type: character
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: specialty_concept_id
+    type: integer
+    primary_key: false
+    source_name_column: specialty_source_value
+    foreign_table: concept
+    foreign_column: concept_id
+  - column: care_site_id
+    type: integer
+    primary_key: false
+    source_name_column: null
+    foreign_table: care_site
+    foreign_column: care_site_id
+  - column: year_of_birth
+    type: integer
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: gender_concept_id
+    type: integer
+    primary_key: false
+    source_name_column: gender_source_value
+    foreign_table: concept
+    foreign_column: concept_id
+  - column: provider_source_value
+    type: character
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: specialty_source_value
+    type: character
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: specialty_source_concept_id
+    type: integer
+    primary_key: false
+    source_name_column: null
+    foreign_table: concept
+    foreign_column: concept_id
+  - column: gender_source_value
+    type: character
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: gender_source_concept_id
+    type: integer
+    primary_key: false
+    source_name_column: null
+    foreign_table: concept
+    foreign_column: concept_id
+
+payer_plan_period:
+  - column: payer_plan_period_id
+    type: integer
+    primary_key: true
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: person_id
+    type: integer
+    primary_key: false
+    source_name_column: null
+    foreign_table: person
+    foreign_column: person_id
+  - column: payer_plan_period_start_date
+    type: Date
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: payer_plan_period_end_date
+    type: Date
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: payer_concept_id
+    type: integer
+    primary_key: false
+    source_name_column: payer_source_value
+    foreign_table: concept
+    foreign_column: concept_id
+  - column: payer_source_value
+    type: character
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: payer_source_concept_id
+    type: integer
+    primary_key: false
+    source_name_column: null
+    foreign_table: concept
+    foreign_column: concept_id
+  - column: plan_concept_id
+    type: integer
+    primary_key: false
+    source_name_column: plan_source_value
+    foreign_table: concept
+    foreign_column: concept_id
+  - column: plan_source_value
+    type: character
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: plan_source_concept_id
+    type: integer
+    primary_key: false
+    source_name_column: null
+    foreign_table: concept
+    foreign_column: concept_id
+  - column: sponsor_concept_id
+    type: integer
+    primary_key: false
+    source_name_column: sponsor_source_value
+    foreign_table: concept
+    foreign_column: concept_id
+  - column: sponsor_source_value
+    type: character
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: sponsor_source_concept_id
+    type: integer
+    primary_key: false
+    source_name_column: null
+    foreign_table: concept
+    foreign_column: concept_id
+  - column: family_source_value
+    type: character
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: stop_reason_concept_id
+    type: integer
+    primary_key: false
+    source_name_column: stop_reason_source_value
+    foreign_table: concept
+    foreign_column: concept_id
+  - column: stop_reason_source_value
+    type: character
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: stop_reason_source_concept_id
+    type: integer
+    primary_key: false
+    source_name_column: null
+    foreign_table: concept
+    foreign_column: concept_id
+
+cost:
+  - column: cost_id
+    type: integer
+    primary_key: true
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: cost_event_id
+    type: integer
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: cost_domain_id
+    type: character
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: cost_type_concept_id
+    type: integer
+    primary_key: false
+    source_name_column: null
+    foreign_table: concept
+    foreign_column: concept_id
+  - column: currency_concept_id
+    type: integer
+    primary_key: false
+    source_name_column: null
+    foreign_table: concept
+    foreign_column: concept_id
+  - column: total_charge
+    type: numeric
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: total_cost
+    type: numeric
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: total_paid
+    type: numeric
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: paid_by_payer
+    type: numeric
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: paid_by_patient
+    type: numeric
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: paid_patient_copay
+    type: numeric
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: paid_patient_coinsurance
+    type: numeric
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: paid_patient_deductible
+    type: numeric
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: paid_by_primary
+    type: numeric
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: paid_ingredient_cost
+    type: numeric
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: paid_dispensing_fee
+    type: numeric
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: payer_plan_period_id
+    type: integer
+    primary_key: false
+    source_name_column: null
+    foreign_table: payer_plan_period
+    foreign_column: payer_plan_period_id
+  - column: amount_allowed
+    type: numeric
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: revenue_code_concept_id
+    type: integer
+    primary_key: false
+    source_name_column: revenue_code_source_value
+    foreign_table: concept
+    foreign_column: concept_id
+  - column: revenue_code_source_value
+    type: character
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: drg_concept_id
+    type: integer
+    primary_key: false
+    source_name_column: drg_source_value
+    foreign_table: concept
+    foreign_column: concept_id
+  - column: drg_source_value
+    type: character
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+
+drug_era:
+  - column: drug_era_id
+    type: integer
+    primary_key: true
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: person_id
+    type: integer
+    primary_key: false
+    source_name_column: null
+    foreign_table: person
+    foreign_column: person_id
+  - column: drug_concept_id
+    type: integer
+    primary_key: false
+    source_name_column: null
+    foreign_table: concept
+    foreign_column: concept_id
+  - column: drug_era_start_date
+    type: Date
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: drug_era_end_date
+    type: Date
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: drug_exposure_count
+    type: integer
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: gap_days
+    type: integer
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+
+condition_era:
+  - column: condition_era_id
+    type: integer
+    primary_key: true
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: person_id
+    type: integer
+    primary_key: false
+    source_name_column: null
+    foreign_table: person
+    foreign_column: person_id
+  - column: condition_concept_id
+    type: integer
+    primary_key: false
+    source_name_column: null
+    foreign_table: concept
+    foreign_column: concept_id
+  - column: condition_era_start_date
+    type: Date
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: condition_era_end_date
+    type: Date
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: condition_occurrence_count
+    type: integer
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+
+episode:
+  - column: episode_id
+    type: integer
+    primary_key: true
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: person_id
+    type: integer
+    primary_key: false
+    source_name_column: null
+    foreign_table: person
+    foreign_column: person_id
+  - column: episode_concept_id
+    type: integer
+    primary_key: false
+    source_name_column: episode_source_value
+    foreign_table: concept
+    foreign_column: concept_id
+  - column: episode_start_date
+    type: Date
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: episode_start_datetime
+    type: POSIXct
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: episode_end_date
+    type: Date
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: episode_end_datetime
+    type: POSIXct
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: episode_parent_id
+    type: integer
+    primary_key: false
+    source_name_column: null
+    foreign_table: episode
+    foreign_column: episode_id
+  - column: episode_number
+    type: integer
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: episode_object_concept_id
+    type: integer
+    primary_key: false
+    source_name_column: null
+    foreign_table: concept
+    foreign_column: concept_id
+  - column: episode_type_concept_id
+    type: integer
+    primary_key: false
+    source_name_column: null
+    foreign_table: concept
+    foreign_column: concept_id
+  - column: episode_source_value
+    type: character
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: episode_source_concept_id
+    type: integer
+    primary_key: false
+    source_name_column: null
+    foreign_table: concept
+    foreign_column: concept_id
+
+episode_event:
+  - column: episode_id
+    type: integer
+    primary_key: false
+    source_name_column: null
+    foreign_table: episode
+    foreign_column: episode_id
+  - column: event_id
+    type: integer
+    primary_key: false
+    source_name_column: null
+    foreign_table: null
+    foreign_column: null
+  - column: episode_event_field_concept_id
+    type: integer
+    primary_key: false
+    source_name_column: null
+    foreign_table: concept
+    foreign_column: concept_id

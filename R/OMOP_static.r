@@ -1,3 +1,14 @@
+
+config_path <- system.file("config/omop.yaml", package = "OmopExplorer")
+omop_table_config <- yaml::read_yaml(config_path)
+
+omop <- list()
+for (table_name in names(omop_table_config)){
+    omop[[table_name]] <- bind_rows(omop_table_config[[table_name]])
+}
+
+
+
 concept_id_source_value_map <- list(
   # PERSON
   gender_concept_id = "gender_source_value",
@@ -223,5 +234,4 @@ omop_show_columns <- list(
     "cause_concept_id"
   )
 )
-
 
