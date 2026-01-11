@@ -1,11 +1,14 @@
 
-config_path <- system.file("config/omop.yaml", package = "OmopExplorer")
-omop_table_config <- yaml::read_yaml(config_path)
-
-omop <- list()
-for (table_name in names(omop_table_config)){
-    omop[[table_name]] <- bind_rows(omop_table_config[[table_name]])
-}
+omop <- local({
+  config_path <- system.file("config/omop.yaml", package = "OmopExplorer")
+  omop_table_config <- yaml::read_yaml(config_path)
+  
+  result <- list()
+  for (table_name in names(omop_table_config)){
+    result[[table_name]] <- bind_rows(omop_table_config[[table_name]])
+  }
+  result
+})
 
 
 
