@@ -1,73 +1,148 @@
-register_server_sidebar <- function(input, output, session, con, params){
-    observe({
-        # Update date range filter based on data
-        date_range <- con$person |>
-            summarise(
-                min_date = min(birth_datetime, na.rm = TRUE),
-                max_date = max(birth_datetime, na.rm = TRUE)
-            ) |>
-            collect()
-        
-        updateDateRangeInput(
-            session,
-            "sidebar_date_range_filter",
-            start = as.Date(date_range$min_date),
-            end = as.Date(date_range$max_date),
-            min = as.Date(date_range$min_date),
-            max = as.Date(date_range$max_date)
-        )
-    })
+sidebar_column_key <- function(column_name) {
+    paste(column_name, sep = "::")
+}
 
-    
+sidebar_column_input_id <- function(column_name) {
+    paste0("sidebar_col_search_", column_name)
+}
+
+sidebar_column_clear_id <- function(column_name) {
+    paste0("sidebar_clear_col_search_", column_name)
+}
+
+get_sidebar_column_filters <- function(params, table_name) {
+    cols <- params$table_info[[table_name]]$columns
+    filters <- list()
+    for (col in cols) {
+        val <- params$sidebar_column_values()[[col]]
+        if (!is.null(val)) {
+            filters[[col]] <- val
+        }
+    }
+    filters
+}
+
+get_global_sidebar_value <- function(params, table_name) {
+    stored <- params$sidebar_search_anything_values[[table_name]]
+    if (is.null(stored)) "" else stored
+}
+
+
+sidebar_debounce_millis <- 2000
+register_server_sidebar <- function(input, output, session, con, params){
+    available_tables <- names(params$table_info)
+
+    observeEvent(params$displayed_table_name(), {
+        current_table <- params$displayed_table_name()
+        # Freeze the input to prevent triggering the debounced reactive
+        freezeReactiveValue(input, "sidebar_search_anything")
+        updateTextInput(
+            session,
+            "sidebar_search_anything",
+            value = get_global_sidebar_value(params, current_table)
+        )
+    }, ignoreInit = FALSE)
+
+    observeEvent(params$global_search_value(), {
+        current_value <- params$global_search_value()
+        current_table <- params$displayed_table_name()
+        if (!identical(current_value, get_global_sidebar_value(params, current_table))) {
+            print(glue("update global search value to {current_value} for table {current_table}"))
+            params$sidebar_search_anything_values[[current_table]] <- current_value
+        }
+    }, ignoreInit = TRUE, ignoreNULL = FALSE)
+
+    observeEvent(input$sidebar_clear_table_filter, {
+        current_table <- params$displayed_table_name()
+        updateTextInput(session, "sidebar_search_anything", value = "")
+        params$sidebar_search_anything_values[[current_table]] <- ""
+    }, ignoreInit = TRUE)
+
+    observeEvent(input$sidebar_clear_all, {
+        current_table <- params$displayed_table_name()
+        table_info <- params$table_info[[current_table]]
+        if (is.null(table_info)) return(NULL)
+
+        updateTextInput(session, "sidebar_search_anything", value = "")
+        params$sidebar_search_anything_values[[current_table]] <- ""
+
+        for (col in table_info$columns) {
+            input_id <- sidebar_column_input_id(col)
+            params$sidebar_column_values_internal[[col]] <- ""
+            updateTextInput(session, input_id, value = "")
+        }
+    }, ignoreInit = TRUE)
+
     # Dynamically render column search boxes based on visible table
     output$sidebar_column_filters <- renderUI({
-        table_name <- params$visible_table_name()
-        
-        # Get columns for the visible table
-        tbl_cols <- colnames(con[[table_name]])
-        
-        # Create search input for each column with persisted values
+        table_name <- params$displayed_table_name()
+        table_info <- params$table_info[[table_name]]
+        if (is.null(table_info) || length(table_info$columns) == 0) {
+            return(div("No filters available for this table."))
+        }
+
+        tbl_cols <- table_info$columns
+
         column_inputs <- lapply(tbl_cols, function(col) {
-            input_id <- paste0("col_search_", col)
-            
-            # Get stored value for this column (if any)
-            stored_value <- isolate(params$column_search_values[[col]])
+            input_id <- sidebar_column_input_id(col)
+            clear_id <- sidebar_column_clear_id(col)
+            stored_value <- isolate(params$sidebar_column_values_internal[[col]])
             if (is.null(stored_value)) stored_value <- ""
-            
-            tagList(
+
+            div(
+                class = "sidebar-column-filter",
                 textInput(
                     inputId = input_id,
                     label = col,
                     value = stored_value,
                     placeholder = paste("Search", col)
+                ),
+                actionButton(
+                    inputId = clear_id,
+                    label = "Clear",
+                    class = "btn-link btn-sm"
                 )
             )
         })
-        
-        tagList(
-            column_inputs
-        )
+
+        tagList(column_inputs)
     })
-    
+
+
+
+
+    all_available_columns <- c()
+    for (table_name in available_tables) {
+        table_info <- params$table_info[[table_name]]
+        if (is.null(table_info)) next
+        all_available_columns <- c(all_available_columns, table_info$columns)
+    }
+    all_available_columns <- unique(all_available_columns)
+
     # Observe all column search inputs and store their values with debounce
-    observe({
-        table_name <- params$visible_table_name()
-        tbl_cols <- colnames(con[[table_name]])
-        
-        lapply(tbl_cols, function(col) {
-            input_id <- paste0("col_search_", col)
-            
-            # Create debounced reactive for this input
-            debounced_input <- debounce(
-                reactive({ input[[input_id]] }),
-                millis = 2000
-            )
-            
-            # Observe the debounced value
-            observeEvent(debounced_input(), {
-                params$column_search_values[[col]] <- debounced_input()
+    for (col in all_available_columns) {
+        local({
+            col_local <- col
+            input_id <- sidebar_column_input_id(col_local)
+            clear_id <- sidebar_column_clear_id(col_local)
+
+            observeEvent(input[[input_id]], {
+                new_value <- input[[input_id]]
+                old_value <- params$sidebar_column_values_internal[[col_local]]
+                if (is.null(old_value)) old_value <- ""
+                if (is.null(new_value)) new_value <- ""
+                
+                # Only update if value changed
+                if (new_value != old_value) {
+                    params$sidebar_column_values_internal[[col_local]] <- new_value
+                }
             }, ignoreInit = TRUE, ignoreNULL = FALSE)
+
+            observeEvent(input[[clear_id]], {
+                updateTextInput(session, input_id, value = "")
+                params$sidebar_column_values_internal[[col_local]] <- ""
+            }, ignoreInit = TRUE)
         })
-    })
+    }
 }
 
