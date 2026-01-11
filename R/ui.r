@@ -2,11 +2,24 @@ sidebar_ui <- sidebar(
     title = "Filters",
     id = "sidebar",
     collapsed = TRUE,
-    # Global search filter
-    textInput(inputId = "sidebar_table_filter", label = "Search Anything", value = ""),
+    # Global search filter with clear buttons
+    div(
+      class = "search-anything-row",
+      textInput(inputId = "sidebar_search_anything", label = "Search Anything", value = ""),
+      actionButton(
+        inputId = "sidebar_clear_table_filter",
+        label = "Clear",
+        class = "btn-secondary btn-sm"
+      ),
+      actionButton(
+        inputId = "sidebar_clear_all",
+        label = "Clear All",
+        class = "btn-link btn-sm"
+      )
+    ),
     hr(),
     # Dynamic column search boxes will be rendered here
-    uiOutput("sidebar_column_filters")
+    uiOutput("sidebar_column_filters", suspendWhenHidden = TRUE)
 )
 
 # Dynamically create nav_panel UI components

@@ -3,6 +3,68 @@ sql_date_types <- function(tbl) {
     lapply(as.data.frame(head(tbl, 1)), function(x) class(x)[1])
 }
 
+is_date_type <- function(ctype) {
+    !is.null(ctype) && ctype %in% c("Date", "POSIXct", "POSIXt")
+}
+
+parse_date_value <- function(value, ctype) {
+    if (is.null(value)) return(NA)
+    trimmed <- trimws(value)
+    if (trimmed == "") return(NA)
+
+    parsed <- suppressWarnings(lubridate::ymd_hms(trimmed, quiet = TRUE))
+    if (!is.na(parsed)) {
+        return(if (ctype == "Date") as.Date(parsed) else parsed)
+    }
+
+    parsed <- suppressWarnings(lubridate::ymd(trimmed, quiet = TRUE))
+    if (!is.na(parsed)) {
+        return(if (ctype == "Date") as.Date(parsed) else as.POSIXct(parsed))
+    }
+
+    parsed <- suppressWarnings(as.Date(trimmed))
+    if (!is.na(parsed)) {
+        return(if (ctype == "Date") parsed else as.POSIXct(parsed))
+    }
+
+    NA
+}
+
+build_date_filter_expr <- function(sym_col, search_value, ctype) {
+    sv <- trimws(search_value)
+    if (sv == "") return(NULL)
+
+    if (grepl("~", sv, fixed = TRUE)) {
+        parts <- strsplit(sv, "~", fixed = TRUE)[[1]]
+        if (length(parts) == 2) {
+            start_val <- parse_date_value(parts[1], ctype)
+            end_val <- parse_date_value(parts[2], ctype)
+            if (!is.na(start_val) && !is.na(end_val)) {
+                return(rlang::expr(!!sym_col >= !!start_val & !!sym_col <= !!end_val))
+            }
+        }
+    }
+
+    if (grepl("^(<=|>=|<|>)", sv)) {
+        op <- sub("^([<>]=?).*$", "\\1", sv)
+        remainder <- sub("^([<>]=?)\\s*(.*)$", "\\2", sv)
+        parsed_val <- parse_date_value(remainder, ctype)
+        if (!is.na(parsed_val)) {
+            if (op == "<") return(rlang::expr(!!sym_col < !!parsed_val))
+            if (op == "<=") return(rlang::expr(!!sym_col <= !!parsed_val))
+            if (op == ">") return(rlang::expr(!!sym_col > !!parsed_val))
+            if (op == ">=") return(rlang::expr(!!sym_col >= !!parsed_val))
+        }
+    }
+
+    parsed_val <- parse_date_value(sv, ctype)
+    if (!is.na(parsed_val)) {
+        return(rlang::expr(!!sym_col == !!parsed_val))
+    }
+
+    NULL
+}
+
 # search all concept_id columns, return list of SQL filter expressions
 sql_search_concept_cols <- function(con, concept_cols, concept_cols_values) {
     if (length(concept_cols) == 0) return(list())
@@ -45,6 +107,18 @@ sql_search_regular_cols <- function(regular_cols, col_types, regular_cols_values
         
         search_term <- paste0("%", search_value, "%")
         search_value_num <- toNum(search_value)
+
+        if (is.null(search_value) || search_value == "") {
+            next
+        }
+
+        if (is_date_type(ctype)) {
+            date_expr <- build_date_filter_expr(sym_col, search_value, ctype)
+            if (!is.null(date_expr)) {
+                filter_exprs <- c(filter_exprs, list(date_expr))
+                next
+            }
+        }
         
         if (!is.null(ctype) && ctype %in% c("character", "logical")) {
             # Character columns: use LIKE
@@ -79,10 +153,29 @@ sql_search_regular_cols <- function(regular_cols, col_types, regular_cols_values
 }
 
 # query <- con$person
-sql_search <- function(con, query, table_name, tbl_search_cols, search_values, relation = "OR") {
+sql_search <- function(con, query, table_name, tbl_search_cols, search_values, relation = "OR", table_info = NULL) {
+    if (is.null(search_values)) search_values <- ""
+    if (length(tbl_search_cols) == 0) return(query)
+
     search_values <- rep(search_values, length.out = length(tbl_search_cols))
-    concept_id_cols <- omop_concept_id_columns[[table_name]]
-    tbl_col_types <- sql_date_types(con[[table_name]])
+    keep <- !(is.na(search_values)) & nzchar(search_values)
+    tbl_search_cols <- tbl_search_cols[keep]
+    search_values <- search_values[keep]
+    if (length(tbl_search_cols) == 0) return(query)
+
+    if (is.null(table_info)) {
+        tbl_col_types <- sql_date_types(con[[table_name]])
+        concept_id_cols <- omop_concept_id_columns[[table_name]]
+    } else {
+        tbl_col_types <- table_info$column_types
+        concept_id_cols <- table_info$concept_columns
+    }
+
+    if (is.null(tbl_col_types)) tbl_col_types <- list()
+    if (is.null(concept_id_cols)) concept_id_cols <- character(0)
+
+    available_cols <- intersect(tbl_search_cols, names(tbl_col_types))
+    tbl_search_cols <- available_cols
     
     # Separate concept_id columns from regular columns
     concept_cols_to_search <- intersect(tbl_search_cols, concept_id_cols)

@@ -56,13 +56,20 @@ register_server_modal <- function(input, output, session, con, params){
     modal_details <- reactive({
         req(modal_key())
         meta_dt <- modal_key()
-        id_col <- omop_key_columns[[meta_dt$table_name]]
-        detail <- con[[meta_dt$table_name]] |> 
+        table_info <- params$table_info[[meta_dt$table_name]]
+        req(!is.null(table_info))
+
+        id_col <- table_info$key_column
+        if (is.null(id_col)) {
+            id_col <- omop_key_columns[[meta_dt$table_name]]
+        }
+        req(!is.null(id_col))
+        detail <- table_info$table |> 
             filter(!!rlang::sym(id_col) == meta_dt$row_id) |>
             concept_id_to_concept_name(
-                concept_name = con$concept |> select(concept_id, concept_name),
+                con=con,
                 table_name = meta_dt$table_name,
-                tbl_all_cols = colnames(con[[meta_dt$table_name]])
+                tbl_all_cols = table_info$columns
             ) |>
             collect()|>
             as.list()

@@ -1,106 +1,108 @@
-sql_dt_filter <- function(con, table, table_name, post_process_pipe, global_search_value) {
-    # for the given table:
-    # 1. build search query based on params
-    # 2. construct concept name
-    # 3. keep only show columns
-    # 4. apply post_process_pipe
-    function(data, params) {
-        # Get the actual table from the reactive without tracking dependency
-        tbl <- table
-        
-        concept_name <- con[['concept']]|>
-            select(concept_id, concept_name)
-        
-        # 1. Column Metadata
-        tbl_all_cols <- colnames(tbl)
-        omop_col_names <- omop[[table_name]][['column']]
-        show_cols <- omop_show_columns[[table_name]]
+resolve_show_columns <- function(table_info, post_process_pipe) {
+    if (is.null(table_info)) return(character(0))
+    candidate_show <- table_info$show_columns
+    if (length(candidate_show) == 0) {
+        candidate_show <- table_info$columns
+    }
 
-        # 2. Total records in DB (fast)
-        records_total <- as.numeric(tally(tbl) |> pull(1))
+    preview_cols <- tryCatch({
+        preview <- table_info$table |> head(0)
+        colnames(post_process_pipe(preview))
+    }, error = function(...) NULL)
 
-        # 3. Build Query
-        query <- tbl
+    available_cols <- if (is.null(preview_cols)) table_info$columns else preview_cols
+    intersect(candidate_show, available_cols)
+}
 
-        # query <- con$person
-        # 4. Global Search (if any)
-        # search_value <- "1961"
-        search_value <- global_search_value
-        if (!is.null(search_value) && search_value != "") {
-            query <- sql_search(con, query, table_name, tbl_all_cols, search_value)
+sql_dt_filter <- function(con, table_name, post_process_pipe, table_info, show_columns, global_search_value, sidebar_filters) {
+    function(data, params_dt) {
+        if (is.null(table_info) || length(show_columns) == 0) {
+            return(list(
+                draw = as.integer(params_dt$draw),
+                recordsTotal = 0,
+                recordsFiltered = 0,
+                data = matrix(nrow = 0, ncol = length(show_columns) + 2),
+                DT_rows_current = integer(0)
+            ))
         }
 
-        # 5. Column-specific Search
-        all_searchs <- list()
-        for (i in seq_along(params$columns)) {
-            col_search <- params$columns[[i]]$search$value
-            col_db_name <- params$columns[[i]]$name
-            if (col_search != "" && col_db_name %in% tbl_all_cols) {
-                all_searchs <- c(all_searchs, list(c(
-                    col_name = col_db_name,
-                    search_value = col_search
-                )))
-            }
+        tbl <- table_info$table
+        tbl_all_cols <- table_info$columns
+
+        records_total <- if (length(tbl_all_cols) > 0) {
+            as.numeric(tally(tbl) |> pull(1))
+        } else {
+            0
         }
-        if (length(all_searchs) > 0) {
-            all_searchs <- do.call(rbind, all_searchs)
+
+        query <- tbl |>
+            mutate(shiny_row_idx = row_number())
+        
+
+        # search from the global filter
+        if (!is.null(global_search_value) && global_search_value != "") {
+            query <- sql_search(con, query, table_name, tbl_all_cols, global_search_value, table_info = table_info)
+        }
+
+        # for each individual column filter
+        if (length(sidebar_filters) > 0) {
+            query <- sql_search(
+                con,
+                query,
+                table_name,
+                names(sidebar_filters),
+                unlist(sidebar_filters),
+                relation = "AND",
+                table_info = table_info
+            )
+        }
+
+        if (length(params_dt$order) > 0) {
+            sort_exprs <- list()
             
-            # all_searchs <- data.frame(col_name = c("year_of_birth", "month_of_birth"), search_value = c("1961", "11"))
-            query <- sql_search(con, query, table_name, all_searchs$col_name, all_searchs$search_value, relation = "AND")
-        }
-
-
-        # 7. Sorting
-        if (length(params$order) > 0) {
-            for (i in seq_along(params$order)) {
-                col_idx <- as.integer(params$order[[i]]$column) + 1
-                # params$columns is 0-indexed, col 0 is often " "
-                col_db_name <- params$columns[[col_idx]]$name
-                direction <- params$order[[i]]$dir
+            for (i in seq_along(params_dt$order)) {
+                col_idx <- as.integer(params_dt$order[[i]]$column) + 1
+                col_db_name <- params_dt$columns[[col_idx]]$name
+                direction <- params_dt$order[[i]]$dir
 
                 if (col_db_name %in% tbl_all_cols) {
                     if (direction == "asc") {
-                        query <- query |> arrange(!!sym(col_db_name))
+                        sort_exprs[[length(sort_exprs) + 1]] <- expr(!!sym(col_db_name))
                     } else {
-                        query <- query |> arrange(desc(!!sym(col_db_name)))
+                        sort_exprs[[length(sort_exprs) + 1]] <- expr(desc(!!sym(col_db_name)))
                     }
                 }
             }
+            
+            # Add shiny_row_idx as the last sort criterion
+            sort_exprs[[length(sort_exprs) + 1]] <- expr(shiny_row_idx)
+            
+            # Apply all sort expressions in a single arrange
+            if (length(sort_exprs) > 0) {
+                query <- query |> arrange(!!!sort_exprs)
+            }
         }
         
-        # add row index for sorting and paging
         query <- query |>
-            mutate(shiny_row_idx = row_number())
+            mutate(shiny_row_row_number = row_number())
             
-        # 8. Fetch Slice (True Lazy Load)
-        start <- as.integer(params$start)
-        len <- as.integer(params$length)
-
-        # Fetch data into R
-        print(paste0("Fetching rows start ", start, " len ", len))
+        start <- as.integer(params_dt$start)
+        len <- as.integer(params_dt$length)
+        print(glue::glue("DT request: start={start}, len={len}"))
         query <- query |>
             mutate(shiny_total_rows = n()) |>
-            filter(shiny_row_idx > start & shiny_row_idx <= start + len)
+            filter(shiny_row_row_number > start & shiny_row_row_number <= start + len)
         
-        # 6. Filtered count
-        # records_filtered <- as.numeric(tally(query) |> pull(1))
-
-        # print("before adding concept names")
-        # print(query|>show_query())
-        # map concept_id to its name
-        # browser()
         query <- concept_id_to_concept_name(
             query = query, 
             con = con, 
             table_name = table_name, 
             tbl_all_cols = tbl_all_cols)
-        # print("after adding concept names")
-        # print(query|>show_query())
 
-        # additional processing and select variables
-        show_columns <- omop_show_columns[[table_name]]
-        query <- post_process_pipe(query)|>
-        select(shiny_total_rows, all_of(show_columns))
+        query <- post_process_pipe(query)
+
+        query <- query |>
+            select(shiny_total_rows, all_of(show_columns))
 
         data_out <- collect(query)
 
@@ -112,35 +114,38 @@ sql_dt_filter <- function(con, table, table_name, post_process_pipe, global_sear
 
         data_out$shiny_total_rows <- NULL
 
-        # add meta data
-        key_column <- omop_key_columns[[table_name]]
+        key_column <- table_info$key_column
+        person_col <- if ("person_id" %in% colnames(data_out)) "person_id" else NULL
         meta_data <- c()
         for(i in seq_len(nrow(data_out))){
-            row_id <- data_out[[key_column]][i]
-            person_id <- data_out[['person_id']][i]
+            row_id <- if (!is.null(key_column) && key_column %in% colnames(data_out)) data_out[[key_column]][i] else NA
+            person_id <- if (!is.null(person_col)) data_out[[person_col]][i] else NA
             meta <- pack_meta_info(table_name, person_id, row_id)
             meta_data <- c(meta_data,meta)
         }
         data_out <- cbind(shiny_meta = meta_data, data_out)
 
-        # current_page_data(data_out)
-
-        # Add the Row Names / Index column if column 0 in UI is " "
-        # This prevents "Requested unknown parameter '0'"
         row_indices <- as.character(seq(start + 1, length.out = nrow(data_out)))
         final_df <- cbind(" " = row_indices, data_out)
 
-        # Convert to un-named matrix so JSON is [[val, val], [val, val]]
         final_matrix <- as.matrix(final_df)
         dimnames(final_matrix) <- NULL
         return(list(
-            draw = as.integer(params$draw),
+            draw = as.integer(params_dt$draw),
             recordsTotal = records_total,
             recordsFiltered = records_filtered,
             data = final_matrix,
-            # DT_rows_all = seq_len(records_filtered), 
             DT_rows_current = seq(start + 1, length.out = nrow(data_out))
         ))
+    }
+}
+
+keep_exist_cols <- function(table_info, table_name, cols){
+    if (table_name %in% names(table_info)){
+        available_cols <- table_info[[table_name]]$columns
+        intersect(cols, available_cols)
+    } else {
+        cols
     }
 }
 
@@ -154,10 +159,26 @@ render_db_DT <- function(
     additional_options = list(), 
     additional_callback = NULL,
     ...){
-    # tables
-    table <- con[[table_name]]
+    table_info <- params$table_info[[table_name]]
+    show_columns <- keep_exist_cols(table_info, table_name, omop_show_columns[[table_name]])
+    
+    if (is.null(table_info) || length(show_columns) == 0) {
+        empty_df <- data.frame(message = sprintf("Table %s is not available or has no displayable columns.", table_name))
+        return(renderDT(
+            DT::datatable(empty_df, options = list(dom = "t"), rownames = FALSE)
+        ))
+    }
 
-    # handle double click callback
+    global_search_value <- get_global_sidebar_value(
+        params,
+        table_name
+    )
+    sidebar_filters <- get_sidebar_column_filters(
+        params,
+        table_name
+    )
+
+
     callback <- "
         table.on('dblclick.dt', 'tbody tr', function () {
             console.log('Row double clicked');
@@ -174,7 +195,6 @@ render_db_DT <- function(
     callback <- DT::JS(callback)
 
 
-    # Default options
     options <- list(
         serverSide = TRUE,
         processing = TRUE, 
@@ -185,19 +205,25 @@ render_db_DT <- function(
     )
     options <- c(options, additional_options)
     
-    show_columns <- omop_show_columns[[table_name]]
     all_columns <- c("shiny_meta", show_columns)
     dummy <- rep(list(1), length(all_columns))
     names(dummy) <- all_columns
     dummy <- as.data.frame(dummy)
 
-    global_search_value <- params$global_search_value()
     renderDT(
         expr = dummy,
         server = TRUE,
         filter = 'top',
         options = options,
-        funcFilter = sql_dt_filter(con, table, table_name, post_process_pipe, global_search_value),
+        funcFilter = sql_dt_filter(
+            con = con,
+            table_name = table_name,
+            post_process_pipe = post_process_pipe,
+            table_info = table_info,
+            show_columns = show_columns,
+            global_search_value = global_search_value,
+            sidebar_filters = sidebar_filters
+        ),
         selection = 'single',
         callback = callback,
         ...

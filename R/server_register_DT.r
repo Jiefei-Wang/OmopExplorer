@@ -104,8 +104,14 @@ register_server_drug_DT <- function(input, output, session, con, params){
 
 
 register_server_note_DT <- function(input, output, session, con, params){
-    select_pipe <- \(x) x |>
-        mutate(note_text_preview = substr(note_text, 1, 100)) 
+    select_pipe <- function(x) {
+        if ("note_text" %in% colnames(x)) {
+            x |>
+                mutate(note_text_preview = substr(note_text, 1, 100))
+        } else {
+            x
+        }
+    }
     observe({
         output$note_DT <- 
         render_db_DT(

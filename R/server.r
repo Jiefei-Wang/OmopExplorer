@@ -1,31 +1,72 @@
 
+build_table_info <- function(con) {
+    available_tables <- setdiff(names(con), "dbcon")
+    table_info <- list()
+
+    for (table_name in available_tables) {
+        tbl <- con[[table_name]]
+        table_columns <- tryCatch(colnames(tbl), error = function(...) character(0))
+        column_types <- if (length(table_columns) > 0) sql_date_types(tbl) else list()
+
+        desired_show_columns <- omop_show_columns[[table_name]]
+        if (is.null(desired_show_columns)) {
+            desired_show_columns <- table_columns
+        }
+        show_columns <- intersect(desired_show_columns, union(table_columns, desired_show_columns))
+
+        concept_columns <- intersect(
+            if (is.null(omop_concept_id_columns[[table_name]])) character(0) else omop_concept_id_columns[[table_name]],
+            table_columns
+        )
+
+        key_column <- omop_key_columns[[table_name]]
+        if (!is.null(key_column) && !(key_column %in% table_columns)) {
+            key_column <- NULL
+        }
+
+        table_info[[table_name]] <- list(
+            table = tbl,
+            columns = table_columns,
+            column_types = column_types,
+            show_columns = show_columns,
+            concept_columns = concept_columns,
+            key_column = key_column
+        )
+    }
+
+    table_info
+}
+
 
 browser_server <- function(input, output, session, con) {
-    params <- list()
-    params$global_search_value <- debounce(
+    params <- new.env()
+
+    params$table_info <- build_table_info(con)
+
+    default_table <- if ("person" %in% names(params$table_info)) {
+        "person"
+    } else if (length(params$table_info) > 0) {
+        names(params$table_info)[1]
+    } else {
+        "person"
+    }
+
+    params$displayed_table_name <- reactiveVal(default_table)
+    params$sidebar_search_anything_values <- reactiveValues()
+
+    # Keep the original reactiveValues for immediate updates
+    params$sidebar_column_values_internal <- reactiveValues()
+    # Delay updates using debounce
+    params$sidebar_column_values <- debounce(
         reactive({
-            print("update")
-            input$sidebar_table_filter
+            reactiveValuesToList(params$sidebar_column_values_internal)
         }),
-        millis = 2000  # 2 second delay
+        millis = sidebar_debounce_millis
     )
 
-    params$visible_table_name <- reactiveVal("person")
-    
-    # Store persistent column search values by column name (not table-specific)
-    params$column_search_values <- reactiveValues()
-    
-    # Print column search values when they change
-    observe({
-        values_list <- reactiveValuesToList(params$column_search_values)
-        print("Column search values changed:")
-        print(values_list)
-    })
-    
-    # Update visible_table_name when tab changes
+    # Update displayed_table_name when tab changes
     observeEvent(input$main_tabs, {
-        params$visible_table_name(input$main_tabs)
-        print(paste("Visible table:", input$main_tabs))
+        params$displayed_table_name(input$main_tabs)
     })
 
     target_person_id <- reactiveVal(NA)
@@ -36,6 +77,14 @@ browser_server <- function(input, output, session, con) {
         meta_dt <- unpack_meta_info(input$tbl_person_id)
         target_person_id(toNum(meta_dt$person_id))
     })
+
+    # update global search value when sidebar input changes
+    params$global_search_value <- debounce(
+        reactive({
+            input$sidebar_search_anything
+        }),
+        millis = sidebar_debounce_millis
+    )
     
     register_server_modal(input, output, session, con, params)
     register_server_sidebar(input, output, session, con, params)
