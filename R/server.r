@@ -171,7 +171,61 @@ register_server_sidebar <- function(input, output, session, con, params){
             max = as.Date(date_range$max_date)
         )
     })
+
+    
+    # Dynamically render column search boxes based on visible table
+    output$sidebar_column_filters <- renderUI({
+        table_name <- params$visible_table_name()
+        
+        # Get columns for the visible table
+        tbl_cols <- colnames(con[[table_name]])
+        
+        # Create search input for each column with persisted values
+        column_inputs <- lapply(tbl_cols, function(col) {
+            input_id <- paste0("col_search_", col)
+            
+            # Get stored value for this column (if any)
+            stored_value <- isolate(params$column_search_values[[col]])
+            if (is.null(stored_value)) stored_value <- ""
+            
+            tagList(
+                textInput(
+                    inputId = input_id,
+                    label = col,
+                    value = stored_value,
+                    placeholder = paste("Search", col)
+                )
+            )
+        })
+        
+        tagList(
+            column_inputs
+        )
+    })
+    
+    # Observe all column search inputs and store their values with debounce
+    observe({
+        table_name <- params$visible_table_name()
+        tbl_cols <- colnames(con[[table_name]])
+        
+        lapply(tbl_cols, function(col) {
+            input_id <- paste0("col_search_", col)
+            
+            # Create debounced reactive for this input
+            debounced_input <- debounce(
+                reactive({ input[[input_id]] }),
+                millis = 2000
+            )
+            
+            # Observe the debounced value
+            observeEvent(debounced_input(), {
+                params$column_search_values[[col]] <- debounced_input()
+            }, ignoreInit = TRUE, ignoreNULL = FALSE)
+        })
+    })
 }
+
+
 
 browser_server <- function(input, output, session, con) {
     params <- list()
@@ -184,6 +238,16 @@ browser_server <- function(input, output, session, con) {
     )
 
     params$visible_table_name <- reactiveVal("person")
+    
+    # Store persistent column search values by column name (not table-specific)
+    params$column_search_values <- reactiveValues()
+    
+    # Print column search values when they change
+    observe({
+        values_list <- reactiveValuesToList(params$column_search_values)
+        print("Column search values changed:")
+        print(values_list)
+    })
     
     # Update visible_table_name when tab changes
     observeEvent(input$main_tabs, {
@@ -200,6 +264,9 @@ browser_server <- function(input, output, session, con) {
         target_person_id(toNum(meta_dt$person_id))
     })
     
+    register_server_modal(input, output, session, con, params)
+    register_server_sidebar(input, output, session, con, params)
+    
 
     register_server_person_DT(input, output, session, con, params)
     register_server_visit_DT(input, output, session, con, params)
@@ -212,7 +279,6 @@ browser_server <- function(input, output, session, con) {
     register_server_provider_DT(input, output, session, con, params)
     register_server_care_site_DT(input, output, session, con, params)
     
-    register_server_modal(input, output, session, con, params)
 }
 
 

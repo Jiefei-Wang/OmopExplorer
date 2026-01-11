@@ -2,9 +2,11 @@ sidebar_ui <- sidebar(
     title = "Filters",
     id = "sidebar",
     collapsed = TRUE,
-    # person id filter
-    textInput(inputId = "sidebar_table_filter", label = "Search Anything", value = "")
-
+    # Global search filter
+    textInput(inputId = "sidebar_table_filter", label = "Search Anything", value = ""),
+    hr(),
+    # Dynamic column search boxes will be rendered here
+    uiOutput("sidebar_column_filters")
 )
 
 # Dynamically create nav_panel UI components
