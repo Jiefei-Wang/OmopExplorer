@@ -46,15 +46,28 @@ parse_partial_date <- function(value, ctype = "Date") {
     parsed_date <- maximum_date_precision(trimmed)
     if (is.null(parsed_date)) return(NULL)
 
-    start <- as_date_value(parsed_date$start, ctype)
-    end <- as_date_value(parsed_date$end, ctype)
+    start <- parsed_date$start
+    end <- parsed_date$end
+    
+    # Format based on ctype
+    start_str <- if (ctype == "Date") {
+        as.character(as.Date(start))
+    } else {
+        format(start, "%Y-%m-%d %H:%M:%S")
+    }
+    
+    end_str <- if (ctype == "Date") {
+        as.character(as.Date(end))
+    } else {
+        format(end, "%Y-%m-%d %H:%M:%S")
+    }
 
-    if (identical(start, end)) {
+    if (identical(start_str, end_str)) {
         return(
-            list(type = "single", value = as.character(start))
+            list(type = "single", value = start_str)
         )
     } else {
-        return(list(type="range", value = paste0(start, "~", end)))
+        return(list(type="range", value = paste0(start_str, "~", end_str)))
     }
 }
 
@@ -102,7 +115,14 @@ maximum_date_precision <- function(date_str) {
     # Full date: various formats
     parsed <- suppressWarnings(parse_date_time(
         date_str,
-        orders = c("Ymd", "Ymd HMS", "mdy", "dmy", "Ym", "my")
+        orders = c(
+            # Date with time
+            "Ymd HMS", "Ymd HM", "Ymd H",
+            "mdy HMS", "mdy HM", "mdy H",
+            "dmy HMS", "dmy HM", "dmy H",
+            # Date only
+            "Ymd", "mdy", "dmy"
+        )
     ))
     
     if (!is.na(parsed)) {

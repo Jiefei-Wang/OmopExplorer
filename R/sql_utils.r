@@ -68,8 +68,12 @@ build_num_filter_expr <- function(sym_col, search_value) {
 }
 
 build_date_filter_expr <- function(sym_col, search_value, ctype) {
-    value <- parse_inequality(search_value)
-
+    sv <- trimws(search_value)
+    if (is.null(sv) || sv == "") return(NULL)
+    
+    value <- parse_inequality(sv)
+    if (is.null(value)) return(NULL)
+    
     operator <- value$operator
 
     if (operator == "=") {
@@ -109,13 +113,14 @@ build_date_filter_expr <- function(sym_col, search_value, ctype) {
 
     if (operator == "inequal") {
         sign <- value$sign
-        sv <- value$value
-        parsed_val <- as.character(as_date_value(sv, ctype))
-        if (!is.na(parsed_val)) {
-            if (sign == "<") return(rlang::expr(!!sym_col < !!parsed_val))
-            if (sign == "<=") return(rlang::expr(!!sym_col <= !!parsed_val))
-            if (sign == ">") return(rlang::expr(!!sym_col > !!parsed_val))
-            if (sign == ">=") return(rlang::expr(!!sym_col >= !!parsed_val))
+        val <- value$value
+        parsed_val <- as_date_value(val, ctype)
+        if (!is.null(parsed_val)) {
+            parsed_str <- as.character(parsed_val)
+            if (sign == "<") return(rlang::expr(!!sym_col < !!parsed_str))
+            if (sign == "<=") return(rlang::expr(!!sym_col <= !!parsed_str))
+            if (sign == ">") return(rlang::expr(!!sym_col > !!parsed_str))
+            if (sign == ">=") return(rlang::expr(!!sym_col >= !!parsed_str))
         }
     }
 
