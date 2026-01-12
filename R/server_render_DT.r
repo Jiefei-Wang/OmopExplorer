@@ -147,7 +147,6 @@ render_db_DT <- function(
     dt_render <- renderDT(
         expr = dummy,
         server = TRUE,
-        filter = 'top',
         options = options,
         funcFilter = sql_dt_filter(
             con = con,

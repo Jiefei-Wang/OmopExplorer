@@ -5,5 +5,5 @@ runExplorer <- function(con, ...) {
     }
 
     app <- shinyApp(browser_ui, server)
-    runApp(app, launch.browser=FALSE, ...)
+    runApp(app, ...)
 }

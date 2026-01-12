@@ -91,8 +91,8 @@ build_cache_DT <- function(con, table_info, table_name, post_process_pipe, show_
         )
     }
 
+    sort_exprs <- list()
     if (length(params_order) > 0) {
-        sort_exprs <- list()
         for (i in seq_along(params_order)) {
             col_db_name <- params_order[[i]]$column
             ascending <- params_order[[i]]$ascending
@@ -108,13 +108,13 @@ build_cache_DT <- function(con, table_info, table_name, post_process_pipe, show_
         
         # Apply all sort expressions in a single arrange
         if (length(sort_exprs) > 0) {
-            query <- query |> arrange(!!!sort_exprs)
+            query <- query |> window_order(!!!sort_exprs)
         }
     }
     
     query <- query |>
         mutate(shiny_row_number = row_number())
-        
+    
 
     # round down the cache start to nearest cache_row_count
     start <- (floor(params_start / cache_row_count)) * cache_row_count
@@ -136,7 +136,12 @@ build_cache_DT <- function(con, table_info, table_name, post_process_pipe, show_
     query <- query |>
         select(shiny_total_rows, all_of(show_columns))
 
-    data_out <- collect(query)
+    data_out <- query|> 
+        collect()
+
+    if (length(sort_exprs) > 0) {
+        data_out <- data_out |> arrange(!!!sort_exprs)
+    }
 
     records_filtered <- if (nrow(data_out) > 0) {
         data_out$shiny_total_rows[1]
