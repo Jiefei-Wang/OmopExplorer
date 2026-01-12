@@ -1,5 +1,5 @@
-duckdbCon <- function(path) {
-  dbcon <- dbConnect(duckdb(), dbdir = path, read_only = TRUE)
+duckdbCon <- function(dbdir, read_only = TRUE, ...) {
+  dbcon <- dbConnect(duckdb(), dbdir = dbdir, read_only = read_only, ...)
   
   available_tables <- intersect(omop_tables, dbListTables(dbcon))
   
