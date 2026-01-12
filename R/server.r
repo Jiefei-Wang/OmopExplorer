@@ -80,6 +80,7 @@ browser_server <- function(input, output, session, con) {
     
     register_server_modal(input, output, session, con, params)
     register_server_sidebar(input, output, session, con, params)
+    register_server_topbar(input, output, session, con, params)
     
 
     register_server_person_DT(input, output, session, con, params)

@@ -39,7 +39,17 @@ create_nav_panels <- function() {
 }
 
 browser_ui <- page_sidebar(
-  title = "OMOP Explorer",
+  title = div(
+    style = "display: flex; justify-content: space-between; align-items: center; min-height: 60px;",
+    div(
+      style = "font-size: 1.25rem; font-weight: 600;",
+      "OMOP Explorer"
+    ),
+    div(
+      style = "flex: 1; margin-left: 20px; text-align: right;",
+      uiOutput("patient_topbar")
+    )
+  ),
   sidebar = sidebar_ui,
   get_app_styles(),
   do.call(navset_tab, c(
