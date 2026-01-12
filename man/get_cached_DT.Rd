@@ -6,8 +6,15 @@
 \usage{
 get_cached_DT(table_name, params_start, params_len)
 }
+\arguments{
+\item{table_name}{Character scalar. Table name.}
+
+\item{params_start}{Integer scalar. Zero-based start index.}
+
+\item{params_len}{Integer scalar. Requested page length.}
+}
 \value{
-list with elements: recordsTotal, recordsFiltered, cached_data
+List with elements: \code{recordsTotal}, \code{recordsFiltered}, \code{cached_data}.
 }
 \description{
 Return cached DT data for a table and paging range.

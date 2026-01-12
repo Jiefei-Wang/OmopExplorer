@@ -1,3 +1,13 @@
+#' Create a mock OMOP DuckDB connection
+#'
+#' Build a temporary DuckDB database from the packaged mock CDM data.
+#'
+#' @return A list with one entry per available OMOP table plus a `dbcon`
+#'   element containing the DuckDB connection.
+#' @examples
+#' con <- mockCon()
+#' DBI::dbDisconnect(con$dbcon, shutdown = TRUE)
+#' @export
 mockCon <- function() {
   db_path <- tempfile(fileext = ".duckdb")
   con <- DBI::dbConnect(duckdb::duckdb(), dbdir = db_path)

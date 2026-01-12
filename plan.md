@@ -3,11 +3,12 @@ note:
 - If you need to update package NAMESPACE, edit zzz.r and run `devtools::document()`
 
 plan:
-- create unit test for server functions, one for each file in R/server_*.r
+- Use roxygen2 for documenting functions. 
+- Exported functions: runExplorer, duckdbCon, mockCon
+- For internal functions, still document with roxygen2, detail the input type and output type
+- For external functions, give examples in the documentation. you can use mockCon() to create a mock database connection for examples.
 - use mock database connection for unit tests
 ```
 con <- mockCon()
 ```
-- in unit tests, use shiny::testServer to test server functions
-- run test using `devtools::test(filter = "file_name")` while file_name is the name after stripping "test-" and ".r"
-- start with tests/testthat/test-server-DT.r
+- Once finish, use `devtools::document()` to update documentation

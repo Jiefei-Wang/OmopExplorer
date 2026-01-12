@@ -1,11 +1,24 @@
 global_DT_space <- new.env()
 
+#' Clear the global DT cache
+#'
+#' @return No return value, called for side effects.
+#' @keywords internal
 clear_global_DT_cache <- function(){
     rm(list = ls(envir = global_DT_space), envir = global_DT_space)
 }
 
 cache_row_count <- 1000
 
+#' Check whether cached DT data is available
+#'
+#' @param table_name Character scalar. Table name.
+#' @param params_search Named list of search parameters.
+#' @param order_params List of order specs with `column` and `ascending`.
+#' @param params_start Integer scalar. Zero-based start index.
+#' @param params_len Integer scalar. Requested page length.
+#' @return Logical scalar indicating whether the cache can be used.
+#' @keywords internal
 is_DT_cache_available <- function(table_name, params_search, order_params, params_start, params_len){
     table_cache <- global_DT_space[[table_name]]
     if (is.null(table_cache)){
@@ -32,7 +45,10 @@ is_DT_cache_available <- function(table_name, params_search, order_params, param
 #'
 #' Return cached DT data for a table and paging range.
 #'
-#' @return list with elements: recordsTotal, recordsFiltered, cached_data
+#' @param table_name Character scalar. Table name.
+#' @param params_start Integer scalar. Zero-based start index.
+#' @param params_len Integer scalar. Requested page length.
+#' @return List with elements: `recordsTotal`, `recordsFiltered`, `cached_data`.
 #' @keywords internal
 get_cached_DT <- function(table_name, params_start, params_len){
     table_cache <- global_DT_space[[table_name]]
@@ -53,6 +69,17 @@ get_cached_DT <- function(table_name, params_start, params_len){
     ))
 }
 
+#' Set cached DT data
+#'
+#' @param table_name Character scalar. Table name.
+#' @param cache_start Integer scalar. Cache start row.
+#' @param params_search Named list of search parameters.
+#' @param params_order List of order specs with `column` and `ascending`.
+#' @param records_total Integer scalar. Total record count.
+#' @param records_filtered Integer scalar. Filtered record count.
+#' @param cache_matrix Matrix of cached DT rows.
+#' @return No return value, called for side effects.
+#' @keywords internal
 set_cached_DT <- function(table_name, cache_start, params_search, params_order, records_total, records_filtered, cache_matrix){
     table_cache <- global_DT_space[[table_name]]
     if (is.null(table_cache)){
@@ -70,6 +97,19 @@ set_cached_DT <- function(table_name, cache_start, params_search, params_order, 
 }
 
 
+#' Build DT cache for a table
+#'
+#' @param con List. Database connection created by `duckdbCon()` or `mockCon()`.
+#' @param table_info List with `table`, `columns`, and `key_column` entries.
+#' @param table_name Character scalar. Table name.
+#' @param post_process_pipe Function. Applied to the query before selection.
+#' @param show_columns Character vector of columns to return.
+#' @param params_search Named list of search parameters.
+#' @param params_order List of order specs with `column` and `ascending`.
+#' @param params_start Integer scalar. Zero-based start index.
+#' @param params_len Integer scalar. Requested page length.
+#' @return List with `start`, `recordsTotal`, `recordsFiltered`, and `cached_data`.
+#' @keywords internal
 build_cache_DT <- function(con, table_info, table_name, post_process_pipe, show_columns, params_search, params_order, params_start, params_len) {
     tbl <- table_info$table
     tbl_all_cols <- table_info$columns
@@ -114,19 +154,19 @@ build_cache_DT <- function(con, table_info, table_name, post_process_pipe, show_
                 sort_exprs[[length(sort_exprs) + 1]] <- expr(desc(!!sym(col_db_name)))
             }
         }
-        
+
         # Add key column as the last sort criterion
         sort_exprs[[length(sort_exprs) + 1]] <- expr(!!sym(key_column))
-        
+
         # Apply all sort expressions in a single arrange
         if (length(sort_exprs) > 0) {
             query <- query |> dbplyr::window_order(!!!sort_exprs)
         }
     }
-    
+
     query <- query |>
         mutate(shiny_row_number = row_number())
-    
+
 
     # round down the cache start to nearest cache_row_count
     start <- (floor(params_start / cache_row_count)) * cache_row_count
@@ -136,11 +176,11 @@ build_cache_DT <- function(con, table_info, table_name, post_process_pipe, show_
     query <- query |>
         mutate(shiny_total_rows = n()) |>
         filter(shiny_row_number > start & shiny_row_number <= start + cache_row_count)
-    
+
     query <- concept_id_to_concept_name(
-        query = query, 
-        con = con, 
-        table_name = table_name, 
+        query = query,
+        con = con,
+        table_name = table_name,
         tbl_all_cols = tbl_all_cols)
 
     query <- post_process_pipe(query)
@@ -148,7 +188,7 @@ build_cache_DT <- function(con, table_info, table_name, post_process_pipe, show_
     query <- query |>
         select(shiny_total_rows, all_of(show_columns))
 
-    data_out <- query|> 
+    data_out <- query|>
         collect()
 
     if (length(sort_exprs) > 0) {
