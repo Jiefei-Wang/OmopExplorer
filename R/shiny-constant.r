@@ -1,2 +1,2 @@
 
-sidebar_debounce_millis <- 0
+sidebar_debounce_millis <- 1000

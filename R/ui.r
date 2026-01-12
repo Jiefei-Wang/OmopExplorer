@@ -1,13 +1,16 @@
 sidebar_ui <- sidebar(
-    title = "Filters",
     id = "sidebar",
     collapsed = TRUE,
-    # Global search filter with clear buttons
-    actionButton(
-    inputId = "sidebar_clear_all",
-    label = "Clear All",
-    class = "btn-link btn-sm",
-    style = "margin-top: 10px;"
+    # Header with title and clear all button in one row
+    div(
+      style = "display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;",
+      tags$h5("Filters", style = "margin: 0;"),
+      actionButton(
+        inputId = "sidebar_clear_all",
+        label = "Clear All",
+        class = "btn-link btn-sm",
+        style = "padding: 0;"
+      )
     ),
     div(
       class = "search-anything-row",
@@ -18,7 +21,7 @@ sidebar_ui <- sidebar(
         placeholder = "Search all columns"
       )
     ),
-    hr(),
+    hr(style = "margin-top: 10px; margin-bottom: 10px;"),
     # Dynamic column search boxes will be rendered here
     uiOutput("sidebar_column_filters")
 )

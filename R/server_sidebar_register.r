@@ -1,12 +1,9 @@
-sidebar_column_key <- function(column_name) {
-    paste(column_name, sep = "::")
-}
 
-sidebar_column_input_id <- function(column_name) {
+sidebar_search_input_id <- function(column_name) {
     paste0("sidebar_col_search_", column_name)
 }
 
-sidebar_column_clear_id <- function(column_name) {
+sidebar_search_clear_id <- function(column_name) {
     paste0("sidebar_clear_col_search_", column_name)
 }
 
@@ -57,7 +54,7 @@ register_server_sidebar <- function(input, output, session, con, params){
     observeEvent(params$displayed_table_name(), {
         current_table <- params$displayed_table_name()
         # Clear the search input when switching tables
-        shinyWidgets::updateSearchInput(session, "sidebar_search_anything", value = "")
+        updateTextInput(session, "sidebar_search_anything", value = "")
         params$sidebar_search_values_internal[["shiny_search_anything"]] <- ""
     }, ignoreInit = FALSE)
 
@@ -71,13 +68,13 @@ register_server_sidebar <- function(input, output, session, con, params){
         current_table <- params$displayed_table_name()
         table_info <- params$table_info[[current_table]]
 
-        shinyWidgets::updateSearchInput(session, "sidebar_search_anything", value = "")
+        updateTextInput(session, "sidebar_search_anything", value = "")
         params$sidebar_search_values_internal[["shiny_search_anything"]] <- ""
 
         for (col in table_info$columns) {
-            input_id <- sidebar_column_input_id(col)
+            input_id <- sidebar_search_input_id(col)
             params$sidebar_search_values_internal[[col]] <- ""
-            shinyWidgets::updateSearchInput(session, input_id, value = "")
+            updateTextInput(session, input_id, value = "")
         }
     }, ignoreInit = TRUE)
 
@@ -92,7 +89,8 @@ register_server_sidebar <- function(input, output, session, con, params){
         tbl_cols <- table_info$columns
 
         column_inputs <- lapply(tbl_cols, function(col) {
-            input_id <- sidebar_column_input_id(col)
+            input_id <- sidebar_search_input_id(col)
+            clear_id <- sidebar_search_clear_id(col)
             stored_value <- isolate(params$sidebar_search_values_internal[[col]])
             if (is.null(stored_value)) stored_value <- ""
 
@@ -101,7 +99,8 @@ register_server_sidebar <- function(input, output, session, con, params){
                     inputId = input_id,
                     label = col,
                     value = stored_value,
-                    placeholder = paste("Search", col)
+                    placeholder = paste("Search", col),
+                    clearButtonId = clear_id
                 )
             )
         })
@@ -113,7 +112,7 @@ register_server_sidebar <- function(input, output, session, con, params){
     for (col in all_available_columns) {
         local({
             col_local <- col
-            input_id <- sidebar_column_input_id(col_local)
+            input_id <- sidebar_search_input_id(col_local)
 
             observeEvent(input[[input_id]], {
                 # print(input_id)
@@ -127,6 +126,26 @@ register_server_sidebar <- function(input, output, session, con, params){
                     params$sidebar_search_values_internal[[col_local]] <- new_value
                 }
             }, ignoreInit = TRUE, ignoreNULL = FALSE)
+        })
+    }
+
+    # Handle clear button for global search
+    observeEvent(input$clear_sidebar_search_anything, {
+        updateTextInput(session, "sidebar_search_anything", value = "")
+        params$sidebar_search_values_internal[["shiny_search_anything"]] <- ""
+    }, ignoreInit = TRUE)
+
+    # Handle clear buttons for column search inputs
+    for (col in all_available_columns) {
+        local({
+            col_local <- col
+            input_id <- sidebar_search_input_id(col_local)
+            clear_id <- sidebar_search_clear_id(col_local)
+
+            observeEvent(input[[clear_id]], {
+                updateTextInput(session, input_id, value = "")
+                params$sidebar_search_values_internal[[col_local]] <- ""
+            }, ignoreInit = TRUE)
         })
     }
 }
