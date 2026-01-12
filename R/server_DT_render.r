@@ -58,14 +58,6 @@ sql_dt_filter <- function(con, table_name, post_process_pipe, table_info, show_c
     }
 }
 
-keep_exist_cols <- function(table_info, table_name, cols){
-    if (table_name %in% names(table_info)){
-        available_cols <- table_info[[table_name]]$columns
-        intersect(cols, available_cols)
-    } else {
-        cols
-    }
-}
 
 
 render_db_DT <- function(

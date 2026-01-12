@@ -7,50 +7,116 @@ is_date_type <- function(ctype) {
     !is.null(ctype) && ctype %in% c("Date", "POSIXct", "POSIXt")
 }
 
-parse_date_value <- function(value, ctype) {
-    if (is.null(value)) return(NA)
+
+
+
+
+
+
+parse_inequality <- function(value) {
     trimmed <- trimws(value)
-    if (trimmed == "") return(NA)
-    parsed <- suppressWarnings(anytime(trimmed))
-    if (is.na(parsed)) {
-        return(NA)
+    if (trimmed == "") return(NULL)
+
+    if (grepl("^(<=|>=|<|>)", trimmed)) {
+        op <- trimws(sub("^([<>]=?).*$", "\\1", trimmed))
+        remainder <- trimws(sub("^([<>]=?)\\s*(.*)$", "\\2", trimmed))
+        return(list(operator = 'inequal', sign = op, value = remainder))
     }
-    if (ctype == "Date") {
-        parsed <- as.Date(parsed)
+
+    if (grepl("~", trimmed, fixed = TRUE)) {
+        parts <- strsplit(trimmed, "~", fixed = TRUE)[[1]]
+        if (length(parts) == 2) {
+            return(list(operator = "~", start = trimws(parts[1]), end = trimws(parts[2])))
+        }
     }
-    return(parsed)
+
+    return(list(operator = "=", value = trimmed))
+}
+
+
+build_num_filter_expr <- function(sym_col, search_value) {
+    value <- parse_inequality(search_value)
+    operator <- value$operator
+
+    if (operator == "=") {
+        parsed_val <- toNum(value$value)
+        if (!is.na(parsed_val)) {
+            return(rlang::expr(!!sym_col == !!parsed_val))
+        }
+    }
+
+    if (operator == "~") {
+        start <- toNum(value$start)
+        end <- toNum(value$end)
+        if (!is.na(start) && !is.na(end)) {
+            return(rlang::expr((!!sym_col >= !!start & !!sym_col <= !!end)))
+        }
+    }
+
+    if (operator == "inequal") {
+        parsed_val <- toNum(value$value)
+        if (!is.na(parsed_val)) {
+            sign <- value$sign
+            if (sign == "<") return(rlang::expr(!!sym_col < !!parsed_val))
+            if (sign == "<=") return(rlang::expr(!!sym_col <= !!parsed_val))
+            if (sign == ">") return(rlang::expr(!!sym_col > !!parsed_val))
+            if (sign == ">=") return(rlang::expr(!!sym_col >= !!parsed_val))
+        }
+    }
+
+    NULL
 }
 
 build_date_filter_expr <- function(sym_col, search_value, ctype) {
-    sv <- trimws(search_value)
-    if (sv == "") return(NULL)
+    value <- parse_inequality(search_value)
 
-    if (grepl("~", sv, fixed = TRUE)) {
-        parts <- strsplit(sv, "~", fixed = TRUE)[[1]]
-        if (length(parts) == 2) {
-            start_val <- parse_date_value(parts[1], ctype)
-            end_val <- parse_date_value(parts[2], ctype)
-            if (!is.na(start_val) && !is.na(end_val)) {
-                return(rlang::expr(!!sym_col >= !!start_val & !!sym_col <= !!end_val))
+    operator <- value$operator
+
+    if (operator == "=") {
+        parsed_val <- parse_partial_date(value$value, ctype)
+        if (is.null(parsed_val)) {
+            return(NULL)
+        }
+        if (parsed_val$type == "single"){
+            return(rlang::expr(!!sym_col == !!parsed_val$value))
+        } else if (parsed_val$type == "range") {
+            return(build_date_filter_expr(sym_col, parsed_val$value, ctype))
+        }
+    }
+
+    if (operator == "~"){
+        # Parse each side with partial date support
+        start_parsed <- parse_partial_date(value$start, ctype)
+        end_parsed <- parse_partial_date(value$end, ctype)
+        
+        if (!is.null(start_parsed) && !is.null(end_parsed)) {
+            # Get the start of the start range and end of the end range
+            start_val <- if (start_parsed$type == "range") {
+                strsplit(start_parsed$value, "~")[[1]][1]
+            } else {
+                start_parsed$value
             }
+            
+            end_val <- if (end_parsed$type == "range") {
+                strsplit(end_parsed$value, "~")[[1]][2]
+            } else {
+                end_parsed$value
+            }
+            
+            return(rlang::expr((!!sym_col >= !!start_val & !!sym_col <= !!end_val)))
         }
     }
 
-    if (grepl("^(<=|>=|<|>)", sv)) {
-        op <- sub("^([<>]=?).*$", "\\1", sv)
-        remainder <- sub("^([<>]=?)\\s*(.*)$", "\\2", sv)
-        parsed_val <- parse_date_value(remainder, ctype)
+    if (operator == "inequal") {
+        sign <- value$sign
+        sv <- value$value
+        parsed_val <- as.character(as_date_value(sv, ctype))
         if (!is.na(parsed_val)) {
-            if (op == "<") return(rlang::expr(!!sym_col < !!parsed_val))
-            if (op == "<=") return(rlang::expr(!!sym_col <= !!parsed_val))
-            if (op == ">") return(rlang::expr(!!sym_col > !!parsed_val))
-            if (op == ">=") return(rlang::expr(!!sym_col >= !!parsed_val))
+            if (sign == "<") return(rlang::expr(!!sym_col < !!parsed_val))
+            if (sign == "<=") return(rlang::expr(!!sym_col <= !!parsed_val))
+            if (sign == ">") return(rlang::expr(!!sym_col > !!parsed_val))
+            if (sign == ">=") return(rlang::expr(!!sym_col >= !!parsed_val))
         }
-    }
-
-    parsed_val <- parse_date_value(sv, ctype)
-    if (!is.na(parsed_val)) {
-        return(rlang::expr(!!sym_col == !!parsed_val))
     }
 
     NULL
@@ -89,7 +155,6 @@ sql_search_regular_cols <- function(regular_cols, col_types, regular_cols_values
     if (length(regular_cols) == 0) return(list())
     
     filter_exprs <- list()
-    
     for (i in seq_along(regular_cols)) {
         col <- regular_cols[[i]]
         search_value <- regular_cols_values[[i]]
@@ -97,28 +162,37 @@ sql_search_regular_cols <- function(regular_cols, col_types, regular_cols_values
         sym_col <- rlang::sym(col)
         
         search_term <- paste0("%", search_value, "%")
-        search_value_num <- toNum(search_value)
 
         if (is.null(search_value) || search_value == "") {
             next
         }
 
-        if (is_date_type(ctype)) {
+        if (is.null(ctype) || ctype == "character"){
+            # If type is unknown, assume character
+            filter_exprs <- c(
+                filter_exprs,
+                list(rlang::expr(!!sym_col %like% !!search_term))
+            )
+        } else if (ctype %in% c("Date", "POSIXct", "POSIXt")) {
             date_expr <- build_date_filter_expr(sym_col, search_value, ctype)
             if (!is.null(date_expr)) {
                 filter_exprs <- c(filter_exprs, list(date_expr))
                 next
             }
-        }
-        
-        if (!is.null(ctype) && ctype %in% c("character", "logical")) {
+        } else if (ctype == "logical") {
             # Character columns: use LIKE
+            search_boolean <- as.logical(search_value)
+            if (is.na(search_boolean)) {
+                flog.warn("Invalid logical search value for column {col}: {search_value}")
+                next
+            }
             filter_exprs <- c(
                 filter_exprs,
-                list(rlang::expr(!!sym_col %like% !!search_term))
+                list(rlang::expr(!!sym_col == !!search_boolean))
             )
-        } else if (!is.null(ctype) && ctype %in% c("double", "integer", "numeric")) {
-            # Numeric columns: Only use numeric equality if column name doesn't suggest it's a date
+        } else if (ctype %in% c("double", "integer", "numeric")) {
+            num_expr <- build_num_filter_expr(sym_col, search_value)
+            search_value_num <- toNum(search_value)
             if (!is.na(search_value_num)) {
                 # Pure numeric column with numeric search: add exact match
                 filter_exprs <- c(

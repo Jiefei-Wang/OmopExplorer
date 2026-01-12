@@ -8,6 +8,6 @@
 #' @import dbplyr
 #' @importFrom glue glue
 #' @importFrom yaml read_yaml
-#' @importFrom futile.logger flog.info flog.debug
+#' @importFrom futile.logger flog.info flog.debug flog.warn
 #' @importFrom shinyWidgets searchInput
 NULL
