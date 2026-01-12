@@ -21,7 +21,7 @@ build_table_info <- function(con) {
 
         key_column <- omop_key_columns[[table_name]]
         if (!is.null(key_column) && !(key_column %in% table_columns)) {
-            key_column <- NULL
+            stop(glue::glue("Key column '{key_column}' for table '{table_name}' not found in table columns"))
         }
 
         table_info[[table_name]] <- list(
@@ -52,14 +52,13 @@ browser_server <- function(input, output, session, con) {
     }
 
     params$displayed_table_name <- reactiveVal(default_table)
-    params$sidebar_search_anything_values <- reactiveValues()
 
     # Keep the original reactiveValues for immediate updates
-    params$sidebar_column_values_internal <- reactiveValues()
+    params$sidebar_search_values_internal <- reactiveValues()
     # Delay updates using debounce
-    params$sidebar_column_values <- debounce(
+    params$sidebar_search_values <- debounce(
         reactive({
-            reactiveValuesToList(params$sidebar_column_values_internal)
+            reactiveValuesToList(params$sidebar_search_values_internal)
         }),
         millis = sidebar_debounce_millis
     )

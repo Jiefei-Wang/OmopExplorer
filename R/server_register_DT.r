@@ -123,8 +123,6 @@ register_server_note_DT <- function(input, output, session, con, params){
     })
 }
 
-
-
 register_server_death_DT <- function(input, output, session, con, params){
     observe({
         output$death_DT <- 

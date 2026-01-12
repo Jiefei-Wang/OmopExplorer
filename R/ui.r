@@ -7,7 +7,7 @@ sidebar_ui <- sidebar(
       class = "search-anything-row",
       textInput(inputId = "sidebar_search_anything", label = "Search Anything", value = ""),
       actionButton(
-        inputId = "sidebar_clear_table_filter",
+        inputId = "sidebar_clear_search_anything",
         label = "Clear",
         class = "btn-secondary btn-sm"
       ),
@@ -19,7 +19,7 @@ sidebar_ui <- sidebar(
     ),
     hr(),
     # Dynamic column search boxes will be rendered here
-    uiOutput("sidebar_column_filters", suspendWhenHidden = TRUE)
+    uiOutput("sidebar_column_filters")
 )
 
 # Dynamically create nav_panel UI components

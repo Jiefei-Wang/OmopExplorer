@@ -1,141 +1,61 @@
-resolve_show_columns <- function(table_info, post_process_pipe) {
-    if (is.null(table_info)) return(character(0))
-    candidate_show <- table_info$show_columns
-    if (length(candidate_show) == 0) {
-        candidate_show <- table_info$columns
-    }
-
-    preview_cols <- tryCatch({
-        preview <- table_info$table |> head(0)
-        colnames(post_process_pipe(preview))
-    }, error = function(...) NULL)
-
-    available_cols <- if (is.null(preview_cols)) table_info$columns else preview_cols
-    intersect(candidate_show, available_cols)
-}
-
-sql_dt_filter <- function(con, table_name, post_process_pipe, table_info, show_columns, global_search_value, sidebar_filters) {
+sql_dt_filter <- function(con, table_name, post_process_pipe, table_info, show_columns, params_search) {
     function(data, params_dt) {
-        if (is.null(table_info) || length(show_columns) == 0) {
-            return(list(
-                draw = as.integer(params_dt$draw),
-                recordsTotal = 0,
-                recordsFiltered = 0,
-                data = matrix(nrow = 0, ncol = length(show_columns) + 2),
-                DT_rows_current = integer(0)
-            ))
-        }
-
-        tbl <- table_info$table
         tbl_all_cols <- table_info$columns
 
-        records_total <- if (length(tbl_all_cols) > 0) {
-            as.numeric(tally(tbl) |> pull(1))
-        } else {
-            0
-        }
+        params_start <- as.integer(params_dt$start)
+        params_len <- as.integer(params_dt$length)
 
-        query <- tbl |>
-            mutate(shiny_row_idx = row_number())
-        
-
-        # search from the global filter
-        if (!is.null(global_search_value) && global_search_value != "") {
-            query <- sql_search(con, query, table_name, tbl_all_cols, global_search_value, table_info = table_info)
-        }
-
-        # for each individual column filter
-        if (length(sidebar_filters) > 0) {
-            query <- sql_search(
-                con,
-                query,
-                table_name,
-                names(sidebar_filters),
-                unlist(sidebar_filters),
-                relation = "AND",
-                table_info = table_info
+        ## TODO:support custom columns
+        params_order <- list()
+        for (i in seq_along(params_dt$order)) {
+            col_idx <- as.integer(params_dt$order[[i]]$column) + 1
+            col_db_name <- params_dt$columns[[col_idx]]$name
+            ascending <- (params_dt$order[[i]]$dir == "asc")
+            params_order[[i]] <- list(
+                column = col_db_name,
+                ascending = ascending
             )
         }
 
-        if (length(params_dt$order) > 0) {
-            sort_exprs <- list()
-            
-            for (i in seq_along(params_dt$order)) {
-                col_idx <- as.integer(params_dt$order[[i]]$column) + 1
-                col_db_name <- params_dt$columns[[col_idx]]$name
-                direction <- params_dt$order[[i]]$dir
 
-                if (col_db_name %in% tbl_all_cols) {
-                    if (direction == "asc") {
-                        sort_exprs[[length(sort_exprs) + 1]] <- expr(!!sym(col_db_name))
-                    } else {
-                        sort_exprs[[length(sort_exprs) + 1]] <- expr(desc(!!sym(col_db_name)))
-                    }
-                }
-            }
-            
-            # Add shiny_row_idx as the last sort criterion
-            sort_exprs[[length(sort_exprs) + 1]] <- expr(shiny_row_idx)
-            
-            # Apply all sort expressions in a single arrange
-            if (length(sort_exprs) > 0) {
-                query <- query |> arrange(!!!sort_exprs)
-            }
-        }
-        
-        query <- query |>
-            mutate(shiny_row_row_number = row_number())
-            
-        start <- as.integer(params_dt$start)
-        len <- as.integer(params_dt$length)
-        print(glue::glue("DT request: start={start}, len={len}"))
-        query <- query |>
-            mutate(shiny_total_rows = n()) |>
-            filter(shiny_row_row_number > start & shiny_row_row_number <= start + len)
-        
-        query <- concept_id_to_concept_name(
-            query = query, 
-            con = con, 
-            table_name = table_name, 
-            tbl_all_cols = tbl_all_cols)
 
-        query <- post_process_pipe(query)
-
-        query <- query |>
-            select(shiny_total_rows, all_of(show_columns))
-
-        data_out <- collect(query)
-
-        records_filtered <- if (nrow(data_out) > 0) {
-            data_out$shiny_total_rows[1]
-        } else {
-            0
+        cache_available <- is_DT_cache_available(
+            table_name,
+            params_search,
+            params_order,
+            params_start,
+            params_len
+        )
+        # build cache if not available
+        if (!cache_available) {
+            print("Building new DT cache")
+            data_cache_DT <- build_cache_DT(
+                con, table_info, table_name, post_process_pipe, show_columns, params_search, params_order, params_start, params_len) 
+            set_cached_DT(
+                table_name,
+                data_cache_DT$start,
+                params_search,
+                params_order,
+                data_cache_DT$recordsTotal,
+                data_cache_DT$recordsFiltered,
+                data_cache_DT$cached_data
+            )
         }
 
-        data_out$shiny_total_rows <- NULL
+        dataDT <- get_cached_DT(
+                table_name,
+                params_start,
+                params_len
+            )
 
-        key_column <- table_info$key_column
-        person_col <- if ("person_id" %in% colnames(data_out)) "person_id" else NULL
-        meta_data <- c()
-        for(i in seq_len(nrow(data_out))){
-            row_id <- if (!is.null(key_column) && key_column %in% colnames(data_out)) data_out[[key_column]][i] else NA
-            person_id <- if (!is.null(person_col)) data_out[[person_col]][i] else NA
-            meta <- pack_meta_info(table_name, person_id, row_id)
-            meta_data <- c(meta_data,meta)
-        }
-        data_out <- cbind(shiny_meta = meta_data, data_out)
+        print(glue::glue("DT: start={params_start}, len={params_len}, total={dataDT$recordsTotal}, filtered={dataDT$recordsFiltered}"))
 
-        row_indices <- as.character(seq(start + 1, length.out = nrow(data_out)))
-        final_df <- cbind(" " = row_indices, data_out)
-
-        final_matrix <- as.matrix(final_df)
-        dimnames(final_matrix) <- NULL
         return(list(
             draw = as.integer(params_dt$draw),
-            recordsTotal = records_total,
-            recordsFiltered = records_filtered,
-            data = final_matrix,
-            DT_rows_current = seq(start + 1, length.out = nrow(data_out))
+            recordsTotal = dataDT$recordsTotal,
+            recordsFiltered = dataDT$recordsFiltered,
+            data = dataDT$cached_data,
+            DT_rows_current = seq(params_start + 1, length.out = nrow(dataDT$cached_data))
         ))
     }
 }
@@ -169,16 +89,30 @@ render_db_DT <- function(
         ))
     }
 
-    global_search_value <- get_global_sidebar_value(
-        params,
-        table_name
-    )
-    sidebar_filters <- get_sidebar_column_filters(
-        params,
+    # get relevant search parameters
+    params_search <- get_relavent_search_values(
+        params$sidebar_search_values(),
+        params$table_info,
         table_name
     )
 
-
+    table_cache <- global_DT_space[[table_name]]
+    if (is.null(table_cache)){
+        table_cache <- list(
+            params_search = list(),
+            dt_render = NULL
+        )
+        global_DT_space[[table_name]] <- table_cache
+    } else {
+        # check if search params changed
+        if (identical(table_cache$params_search, params_search)){
+            # stop here, no need to re-render
+            return(table_cache$dt_render)
+        } else{
+            table_cache$params_search <- params_search
+        }
+    }
+    
     callback <- "
         table.on('dblclick.dt', 'tbody tr', function () {
             console.log('Row double clicked');
@@ -210,7 +144,7 @@ render_db_DT <- function(
     names(dummy) <- all_columns
     dummy <- as.data.frame(dummy)
 
-    renderDT(
+    dt_render <- renderDT(
         expr = dummy,
         server = TRUE,
         filter = 'top',
@@ -221,11 +155,14 @@ render_db_DT <- function(
             post_process_pipe = post_process_pipe,
             table_info = table_info,
             show_columns = show_columns,
-            global_search_value = global_search_value,
-            sidebar_filters = sidebar_filters
+            params_search = params_search
         ),
         selection = 'single',
         callback = callback,
         ...
     )
+
+    table_cache$dt_render <- dt_render
+    global_DT_space[[table_name]] <- table_cache
+    dt_render
 }
