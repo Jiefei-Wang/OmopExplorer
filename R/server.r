@@ -77,13 +77,6 @@ browser_server <- function(input, output, session, con) {
         target_person_id(toNum(meta_dt$person_id))
     })
 
-    # update global search value when sidebar input changes
-    params$global_search_value <- debounce(
-        reactive({
-            input$sidebar_search_anything
-        }),
-        millis = sidebar_debounce_millis
-    )
     
     register_server_modal(input, output, session, con, params)
     register_server_sidebar(input, output, session, con, params)

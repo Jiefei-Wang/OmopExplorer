@@ -1,0 +1,10 @@
+/* Minimal X button for search inputs */
+.btn-sm-custom {
+  font-size: 12px;
+  padding: 0;
+  margin: 0;
+  line-height: 1;
+  min-width: unset;
+  border: none;
+  background: transparent;
+}

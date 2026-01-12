@@ -11,23 +11,14 @@ parse_date_value <- function(value, ctype) {
     if (is.null(value)) return(NA)
     trimmed <- trimws(value)
     if (trimmed == "") return(NA)
-
-    parsed <- suppressWarnings(lubridate::ymd_hms(trimmed, quiet = TRUE))
-    if (!is.na(parsed)) {
-        return(if (ctype == "Date") as.Date(parsed) else parsed)
+    parsed <- suppressWarnings(anytime(trimmed))
+    if (is.na(parsed)) {
+        return(NA)
     }
-
-    parsed <- suppressWarnings(lubridate::ymd(trimmed, quiet = TRUE))
-    if (!is.na(parsed)) {
-        return(if (ctype == "Date") as.Date(parsed) else as.POSIXct(parsed))
+    if (ctype == "Date") {
+        parsed <- as.Date(parsed)
     }
-
-    parsed <- suppressWarnings(as.Date(trimmed))
-    if (!is.na(parsed)) {
-        return(if (ctype == "Date") parsed else as.POSIXct(parsed))
-    }
-
-    NA
+    return(parsed)
 }
 
 build_date_filter_expr <- function(sym_col, search_value, ctype) {
@@ -163,13 +154,9 @@ sql_search <- function(con, query, table_name, tbl_search_cols, search_values, r
     search_values <- search_values[keep]
     if (length(tbl_search_cols) == 0) return(query)
 
-    if (is.null(table_info)) {
-        tbl_col_types <- sql_date_types(con[[table_name]])
-        concept_id_cols <- omop_concept_id_columns[[table_name]]
-    } else {
-        tbl_col_types <- table_info$column_types
-        concept_id_cols <- table_info$concept_columns
-    }
+    
+    tbl_col_types <- table_info$column_types
+    concept_id_cols <- table_info$concept_columns
 
     if (is.null(tbl_col_types)) tbl_col_types <- list()
     if (is.null(concept_id_cols)) concept_id_cols <- character(0)

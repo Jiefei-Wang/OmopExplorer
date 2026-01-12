@@ -20,4 +20,5 @@ Imports:
     dbplyr,
     glue,
     yaml,
-    futile.logger
+    futile.logger,
+    shinyWidgets

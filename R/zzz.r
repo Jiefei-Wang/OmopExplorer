@@ -9,4 +9,5 @@
 #' @importFrom glue glue
 #' @importFrom yaml read_yaml
 #' @importFrom futile.logger flog.info flog.debug
+#' @importFrom shinyWidgets searchInput
 NULL

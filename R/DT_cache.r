@@ -31,9 +31,12 @@ get_cached_DT <- function(table_name, params_start, params_len){
     cache_matrix <- dt_render_cache$cache_matrix
     cache_start <- params_start - dt_render_cache$start + 1
     cache_end <- min(params_start - dt_render_cache$start + params_len, nrow(cache_matrix))
-
-    cached_data <- cache_matrix[
-        cache_start:cache_end, , drop = FALSE]
+    if (cache_end != 0){
+        cached_data <- cache_matrix[
+            cache_start:cache_end, , drop = FALSE]
+    } else {
+        cached_data <- cache_matrix
+    }
     return(list(
         recordsTotal = dt_render_cache$recordsTotal,
         recordsFiltered = dt_render_cache$recordsFiltered,
@@ -72,13 +75,13 @@ build_cache_DT <- function(con, table_info, table_name, post_process_pipe, show_
     query <- tbl
 
     # search from the global filter
-    search_anything <- params_search[["sidebar_search_anything"]]
+    search_anything <- params_search[["shiny_search_anything"]]
     if (!is.null(search_anything) && search_anything != "") {
         query <- sql_search(con, query, table_name, tbl_all_cols, search_anything, table_info = table_info)
     }
 
     # for each individual column filter
-    sidebar_filters <- params_search[names(params_search) != "sidebar_search_anything"]
+    sidebar_filters <- params_search[names(params_search) != "shiny_search_anything"]
     if (length(sidebar_filters) > 0) {
         query <- sql_search(
             con,

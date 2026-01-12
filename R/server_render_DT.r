@@ -17,8 +17,6 @@ sql_dt_filter <- function(con, table_name, post_process_pipe, table_info, show_c
             )
         }
 
-
-
         cache_available <- is_DT_cache_available(
             table_name,
             params_search,

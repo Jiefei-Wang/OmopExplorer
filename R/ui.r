@@ -3,18 +3,19 @@ sidebar_ui <- sidebar(
     id = "sidebar",
     collapsed = TRUE,
     # Global search filter with clear buttons
+    actionButton(
+    inputId = "sidebar_clear_all",
+    label = "Clear All",
+    class = "btn-link btn-sm",
+    style = "margin-top: 10px;"
+    ),
     div(
       class = "search-anything-row",
-      textInput(inputId = "sidebar_search_anything", label = "Search Anything", value = ""),
-      actionButton(
-        inputId = "sidebar_clear_search_anything",
-        label = "Clear",
-        class = "btn-secondary btn-sm"
-      ),
-      actionButton(
-        inputId = "sidebar_clear_all",
-        label = "Clear All",
-        class = "btn-link btn-sm"
+      make_search_box(
+        inputId = "sidebar_search_anything",
+        label = "Search Anything",
+        value = "",
+        placeholder = "Search all columns"
       )
     ),
     hr(),
@@ -37,6 +38,7 @@ create_nav_panels <- function() {
 browser_ui <- page_sidebar(
   title = "OMOP Explorer",
   sidebar = sidebar_ui,
+  get_app_styles(),
   do.call(navset_tab, c(
     list(id = "main_tabs"),
     create_nav_panels()
