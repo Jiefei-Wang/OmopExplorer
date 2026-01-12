@@ -9,7 +9,7 @@ make_clickable_id <- function(id_name, id_value){
 }
 
 make_modal_view_item <- function(label, value){
-    if (label %in% names(omop_key_to_table)){
+    if (label %in% names(omop_key_to_table) && !is.na(value)){
         value <- make_clickable_id(label, value)
     } else {
         value <- as.character(value)
@@ -60,9 +60,7 @@ register_server_modal <- function(input, output, session, con, params){
         req(!is.null(table_info))
 
         id_col <- table_info$key_column
-        if (is.null(id_col)) {
-            id_col <- omop_key_columns[[meta_dt$table_name]]
-        }
+
         req(!is.null(id_col))
         detail <- table_info$table |> 
             filter(!!rlang::sym(id_col) == meta_dt$row_id) |>
@@ -92,7 +90,8 @@ register_server_modal <- function(input, output, session, con, params){
     output$item_detail_list <- renderUI({
         req(modal_details())
         dt <- modal_details()
-        id_col <- omop_key_columns[[dt$shiny_table_name]]
+        id_col <- params$table_info[[dt$shiny_table_name]]$key_column
+        
         dt$person_id <- NULL
         dt[[id_col]] <- NULL
 
