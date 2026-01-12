@@ -72,7 +72,7 @@ browser_server <- function(input, output, session, con) {
     params$target_person_id <- target_person_id
     # Update UI filter when table row is clicked
     observeEvent(input$tbl_person_id, {
-        print(input$tbl_person_id)
+        flog.debug(glue::glue("Person ID clicked: {input$tbl_person_id}"))
         meta_dt <- unpack_meta_info(input$tbl_person_id)
         target_person_id(toNum(meta_dt$person_id))
     })

@@ -119,7 +119,7 @@ build_cache_DT <- function(con, table_info, table_name, post_process_pipe, show_
     # round down the cache start to nearest cache_row_count
     start <- (floor(params_start / cache_row_count)) * cache_row_count
 
-    print(glue::glue("DT request: start={start + 1}, len={cache_row_count}"))
+    flog.debug(glue::glue("DT request: start={start + 1}, len={cache_row_count}"))
 
     query <- query |>
         mutate(shiny_total_rows = n()) |>

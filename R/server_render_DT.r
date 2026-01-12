@@ -28,7 +28,7 @@ sql_dt_filter <- function(con, table_name, post_process_pipe, table_info, show_c
         )
         # build cache if not available
         if (!cache_available) {
-            print("Building new DT cache")
+            flog.debug("Building new DT cache")
             data_cache_DT <- build_cache_DT(
                 con, table_info, table_name, post_process_pipe, show_columns, params_search, params_order, params_start, params_len) 
             set_cached_DT(
@@ -48,7 +48,7 @@ sql_dt_filter <- function(con, table_name, post_process_pipe, table_info, show_c
                 params_len
             )
 
-        print(glue::glue("DT: start={params_start}, len={params_len}, total={dataDT$recordsTotal}, filtered={dataDT$recordsFiltered}"))
+        flog.debug(glue::glue("DT: start={params_start}, len={params_len}, total={dataDT$recordsTotal}, filtered={dataDT$recordsFiltered}"))
 
         return(list(
             draw = as.integer(params_dt$draw),
@@ -120,7 +120,7 @@ render_db_DT <- function(
             table_cache$params_search <- params_search
         }
     }
-    print(glue::glue("Rendering DT for table {table_name} with search params: {paste(names(params_search), params_search, sep='=', collapse=', ')}"))
+    flog.debug(glue::glue("Rendering DT for table {table_name} with search params: {paste(names(params_search), params_search, sep='=', collapse=', ')}"))
     
     callback <- "
         table.on('dblclick.dt', 'tbody tr', function () {
