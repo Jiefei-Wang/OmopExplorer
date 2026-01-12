@@ -1,5 +1,9 @@
 global_DT_space <- new.env()
 
+clear_global_DT_cache <- function(){
+    rm(list = ls(envir = global_DT_space), envir = global_DT_space)
+}
+
 cache_row_count <- 1000
 
 is_DT_cache_available <- function(table_name, params_search, order_params, params_start, params_len){

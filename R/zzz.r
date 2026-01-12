@@ -1,11 +1,10 @@
 #' @import shiny
-#' @import bslib
-#' @import ggplot2
+#' @importFrom bslib sidebar page_sidebar nav_panel navset_tab
 #' @import dplyr
-#' @import DBI
-#' @import DT
-#' @import duckdb
-#' @import dbplyr
+#' @importFrom DBI dbConnect dbListTables
+#' @importFrom DT datatable DTOutput renderDT JS
+#' @importFrom duckdb duckdb
+#' @importFrom dbplyr remote_name sql
 #' @importFrom glue glue
 #' @importFrom yaml read_yaml
 #' @importFrom futile.logger flog.info flog.debug flog.warn

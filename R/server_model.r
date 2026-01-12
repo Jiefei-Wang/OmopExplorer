@@ -9,7 +9,9 @@ make_clickable_id <- function(id_name, id_value){
 }
 
 make_modal_view_item <- function(label, value){
-    if (label %in% names(omop_key_to_table) && !is.na(value)){
+    if (is.null(value) || length(value) == 0 || is.na(value)) {
+        value <- ""
+    }else if (label %in% names(omop_key_to_table)) {
         value <- make_clickable_id(label, value)
     } else {
         value <- as.character(value)
@@ -58,7 +60,6 @@ register_server_modal <- function(input, output, session, con, params){
         meta_dt <- modal_key()
         table_info <- params$table_info[[meta_dt$table_name]]
         req(!is.null(table_info))
-
         id_col <- table_info$key_column
 
         req(!is.null(id_col))
@@ -94,7 +95,7 @@ register_server_modal <- function(input, output, session, con, params){
         
         dt$person_id <- NULL
         dt[[id_col]] <- NULL
-
+        
         div(
             lapply(names(dt), function(col_name) {
                 val <- dt[[col_name]]
