@@ -28,7 +28,12 @@ is_DT_cache_available <- function(table_name, params_search, order_params, param
     return(FALSE)
 }
 
+#' Get cached DT data
+#'
+#' Return cached DT data for a table and paging range.
+#'
 #' @return list with elements: recordsTotal, recordsFiltered, cached_data
+#' @keywords internal
 get_cached_DT <- function(table_name, params_start, params_len){
     table_cache <- global_DT_space[[table_name]]
     dt_render_cache <- table_cache$dt_render_cache
@@ -115,7 +120,7 @@ build_cache_DT <- function(con, table_info, table_name, post_process_pipe, show_
         
         # Apply all sort expressions in a single arrange
         if (length(sort_exprs) > 0) {
-            query <- query |> window_order(!!!sort_exprs)
+            query <- query |> dbplyr::window_order(!!!sort_exprs)
         }
     }
     

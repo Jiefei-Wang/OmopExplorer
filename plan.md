@@ -1,6 +1,6 @@
 note:
 - all reactive value must be in params, if you need a reactive value inside a function, pass params
-
+- If you need to update package NAMESPACE, edit zzz.r and run `devtools::document()`
 
 plan:
 - create unit test for server functions, one for each file in R/server_*.r

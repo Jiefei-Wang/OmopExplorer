@@ -1,0 +1,30 @@
+test_that("DT register functions attach outputs", {
+    con <- mockCon()
+    params <- make_test_params(con, "person")
+
+    shiny::testServer(function(input, output, session) {
+        register_server_person_DT(input, output, session, con, params)
+        register_server_visit_DT(input, output, session, con, params)
+        register_server_condition_DT(input, output, session, con, params)
+        register_server_procedure_DT(input, output, session, con, params)
+        register_server_measurement_DT(input, output, session, con, params)
+        register_server_drug_DT(input, output, session, con, params)
+        register_server_note_DT(input, output, session, con, params)
+        register_server_death_DT(input, output, session, con, params)
+        register_server_provider_DT(input, output, session, con, params)
+        register_server_care_site_DT(input, output, session, con, params)
+    }, {
+        session$flushReact()
+
+        expect_silent(output$person_DT)
+        expect_silent(output$visit_occurrence_DT)
+        expect_silent(output$condition_occurrence_DT)
+        expect_silent(output$procedure_occurrence_DT)
+        expect_silent(output$measurement_DT)
+        expect_silent(output$drug_exposure_DT)
+        expect_silent(output$note_DT)
+        expect_silent(output$death_DT)
+        expect_silent(output$provider_DT)
+        expect_silent(output$care_site_DT)
+    })
+})

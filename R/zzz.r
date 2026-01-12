@@ -1,6 +1,7 @@
 #' @import shiny
 #' @importFrom bslib sidebar page_sidebar nav_panel navset_tab
-#' @import dplyr
+#' @importFrom dplyr arrange all_of bind_rows collect desc filter mutate n n_distinct pull row_number select summarise tally tbl
+#' @importFrom magrittr %>%
 #' @importFrom DBI dbConnect dbListTables
 #' @importFrom DT datatable DTOutput renderDT JS
 #' @importFrom duckdb duckdb
