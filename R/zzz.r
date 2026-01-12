@@ -8,4 +8,5 @@
 #' @import dbplyr
 #' @importFrom glue glue
 #' @importFrom yaml read_yaml
+#' @importFrom futile.logger flog.info flog.debug
 NULL

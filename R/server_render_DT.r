@@ -96,6 +96,14 @@ render_db_DT <- function(
         table_name
     )
 
+    if (table_name != "person" ) {
+        if (!params$target_person_id() %in% c(NA, NULL)){
+            person_id_value <- params$target_person_id()
+            params_search[['person_id']] <- person_id_value
+        }
+    }
+
+
     table_cache <- global_DT_space[[table_name]]
     if (is.null(table_cache)){
         table_cache <- list(
@@ -112,6 +120,7 @@ render_db_DT <- function(
             table_cache$params_search <- params_search
         }
     }
+    print(glue::glue("Rendering DT for table {table_name} with search params: {paste(names(params_search), params_search, sep='=', collapse=', ')}"))
     
     callback <- "
         table.on('dblclick.dt', 'tbody tr', function () {
