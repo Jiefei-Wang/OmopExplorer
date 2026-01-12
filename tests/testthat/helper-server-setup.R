@@ -1,6 +1,6 @@
 make_test_params <- function(con, displayed_table = "person") {
     params <- new.env()
-    params$table_info <- build_table_info(con)
+    params$table_info <- OmopExplorer:::build_table_info(con)
     params$displayed_table_name <- shiny::reactiveVal(displayed_table)
     params$sidebar_search_values_internal <- shiny::reactiveValues()
     params$sidebar_search_values <- function() {
