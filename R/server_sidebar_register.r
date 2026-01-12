@@ -87,6 +87,17 @@ register_server_sidebar <- function(input, output, session, con, params){
         }
 
         tbl_cols <- table_info$columns
+        show_cols <- table_info$show_columns
+        
+        # Reorder columns: show_columns first (if exists), then the rest
+        if (!is.null(show_cols) && length(show_cols) > 0) {
+            # Get show_columns that exist in tbl_cols
+            ordered_cols <- show_cols[show_cols %in% tbl_cols]
+            # Get remaining columns not in show_columns
+            remaining_cols <- setdiff(tbl_cols, show_cols)
+            # Combine them
+            tbl_cols <- c(ordered_cols, remaining_cols)
+        }
 
         column_inputs <- lapply(tbl_cols, function(col) {
             input_id <- sidebar_search_input_id(col)

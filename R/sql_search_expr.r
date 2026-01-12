@@ -1,18 +1,4 @@
 
-sql_date_types <- function(tbl) {
-    lapply(as.data.frame(head(tbl, 1)), function(x) class(x)[1])
-}
-
-is_date_type <- function(ctype) {
-    !is.null(ctype) && ctype %in% c("Date", "POSIXct", "POSIXt")
-}
-
-
-
-
-
-
-
 parse_inequality <- function(value) {
     trimmed <- trimws(value)
     if (trimmed == "") return(NULL)
@@ -155,6 +141,7 @@ sql_search_concept_cols <- function(con, concept_cols, concept_cols_values) {
     filter_exprs
 }
 
+# sql_search_regular_cols("person", "integer", "1~5")
 # search all non-concept_id columns, return list of filter expressions
 sql_search_regular_cols <- function(regular_cols, col_types, regular_cols_values) {
     if (length(regular_cols) == 0) return(list())
@@ -197,21 +184,12 @@ sql_search_regular_cols <- function(regular_cols, col_types, regular_cols_values
             )
         } else if (ctype %in% c("double", "integer", "numeric")) {
             num_expr <- build_num_filter_expr(sym_col, search_value)
-            search_value_num <- toNum(search_value)
-            if (!is.na(search_value_num)) {
-                # Pure numeric column with numeric search: add exact match
-                filter_exprs <- c(
+            filter_exprs <- c(
                     filter_exprs,
-                    list(rlang::expr(!!sym_col == !!search_value_num))
+                    list(num_expr)
                 )
-            } else {
-                filter_exprs <- c(
-                    filter_exprs,
-                    list(rlang::expr(as.character(!!sym_col) %like% !!search_term))
-                )
-            }
         } else {
-            # Unknown type (including DATE, TIMESTAMP): cast to TEXT and use LIKE
+            # Unknown type: cast to TEXT and use LIKE
             filter_exprs <- c(
                 filter_exprs,
                 list(rlang::expr(as.character(!!sym_col) %like% !!search_term))
@@ -277,52 +255,4 @@ sql_search <- function(con, query, table_name, tbl_search_cols, search_values, r
     } else {
         query
     }
-}
-
-
-pack_meta_info <- function(table_name, person_id, row_id) {
-    paste0(table_name, "|", person_id, "|", row_id)
-}
-
-unpack_meta_info <- function(meta_string) {
-    parts <- strsplit(meta_string, "|", fixed = TRUE)[[1]]
-    list(
-        table_name = parts[1],
-        person_id = as.numeric(parts[2]),
-        row_id = as.numeric(parts[3])
-    )
-}
-
-concept_id_to_concept_name <- function(query, con, table_name, tbl_all_cols) {
-    omop_concept_col <- omop_concept_id_columns[[table_name]]
-    omop_source_map <- omop_concept_id_source_value_map[[table_name]]
-    # Use scalar subqueries instead of LEFT JOIN for better performance
-    # This ensures concept lookups only happen AFTER row filtering
-    concept_col_list <- intersect(tbl_all_cols, omop_concept_col)
-    
-    if (length(concept_col_list) == 0) return(query)
-    
-    concept_tbl <- dbplyr::remote_name(con$concept)
-    # Build all mutations using SQL subqueries
-    mutation_list <- list()
-    for (col in concept_col_list) {
-        mapped_source_value <- omop_source_map[[col]]
-        
-        # Create scalar subquery for concept name lookup
-        subquery <- paste0("(SELECT concept_name FROM ", concept_tbl, " WHERE concept_id = ", col, ")")
-        
-        if (is.null(mapped_source_value)) {
-            mutation_list[[col]] <- dbplyr::sql(paste0(
-                "CONCAT(", subquery, ", ' (', CAST(", col, " AS VARCHAR), ')')"
-            ))
-        } else {
-            mutation_list[[col]] <- dbplyr::sql(paste0(
-                "CASE WHEN (", col, " IS NULL OR ", col, " = 0) ",
-                "THEN CONCAT(", mapped_source_value, ", ' (0)') ",
-                "ELSE CONCAT(", subquery, ", ' (', CAST(", col, " AS VARCHAR), ')') END"
-            ))
-        }
-    }
-    
-    query |> mutate(!!!mutation_list)
 }

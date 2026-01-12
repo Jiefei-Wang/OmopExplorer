@@ -4,6 +4,10 @@ toNum <- function(x) {
 }
 
 
+is_date_type <- function(ctype) {
+    !is.null(ctype) && ctype %in% c("Date", "POSIXct", "POSIXt")
+}
+
 
 as_date_value <- function(value, ctype) {
     parsed <- suppressWarnings(parse_date_time(
@@ -134,3 +138,4 @@ maximum_date_precision <- function(date_str) {
     
     NULL
 }
+
