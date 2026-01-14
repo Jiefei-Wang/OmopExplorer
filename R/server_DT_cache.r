@@ -107,10 +107,9 @@ set_cached_DT <- function(table_name, cache_start, params_search, params_order, 
 #' @param params_search Named list of search parameters.
 #' @param params_order List of order specs with `column` and `ascending`.
 #' @param params_start Integer scalar. Zero-based start index.
-#' @param params_len Integer scalar. Requested page length.
 #' @return List with `start`, `recordsTotal`, `recordsFiltered`, and `cached_data`.
 #' @keywords internal
-build_cache_DT <- function(con, table_info, table_name, post_process_pipe, show_columns, params_search, params_order, params_start, params_len) {
+build_cache_DT <- function(con, table_info, table_name, post_process_pipe, show_columns, params_search, params_order, params_start) {
     tbl <- table_info$table
     tbl_all_cols <- table_info$columns
     key_column <- table_info$key_column
