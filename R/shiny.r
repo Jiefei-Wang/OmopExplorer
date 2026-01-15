@@ -14,7 +14,8 @@ runExplorer <- function(con, ...) {
     server = function(input, output, session) {
         browser_server(input, output, session, con)
     }
+    ui = browser_ui()
 
-    app <- shinyApp(browser_ui, server)
+    app <- shinyApp(ui, server)
     runApp(app, ...)
 }

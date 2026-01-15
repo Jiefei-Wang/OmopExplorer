@@ -8,7 +8,7 @@ build_table_info <- function(con) {
         table_columns <- tryCatch(colnames(tbl), error = function(...) character(0))
         column_types <- if (length(table_columns) > 0) sql_date_types(tbl) else list()
 
-        desired_show_columns <- omop_show_columns[[table_name]]
+        desired_show_columns <- omop_panes[[table_name]]$show_columns
         if (is.null(desired_show_columns)) {
             desired_show_columns <- table_columns
         }

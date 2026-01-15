@@ -21,6 +21,8 @@ render_db_DT <- function(
     if (table_name != "person") {
         search_values[['person_id']] <- params$target_person_id()
     }
+    # can only search on existing columns
+    search_values <- search_values[names(search_values)%in% current_table_info$columns]
     # search_values <- list(person_id = "<10")
     # get relevant search parameters
     params_search <- search_deparser(
@@ -40,6 +42,9 @@ render_db_DT <- function(
     
     callback <- "
         table.on('dblclick.dt', 'tbody tr', function () {
+            // Prevent text selection highlight on double-click
+            if (window.getSelection) { window.getSelection().removeAllRanges(); }
+            else if (document.selection) { document.selection.empty(); }
             console.log('Row double clicked');
             var row = table.row(this);
             var data = row.data();
@@ -149,7 +154,8 @@ sql_dt_filter <- function(table_info, con, table_name, post_process_pipe,  param
                 params_search = params_search,
                 params_order = params_order,
                 row_start = cache_start_idx,
-                row_length = cache_len
+                row_length = cache_len,
+                post_process_pipe = post_process_pipe
             ) 
             data_out <- result$data
             recordsFiltered <- result$recordsFiltered

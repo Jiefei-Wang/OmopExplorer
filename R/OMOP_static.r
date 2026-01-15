@@ -86,71 +86,50 @@ omop_key_to_table <- list(
 
 
 omop_panes <- list(
-  list(display_name = "Person", table_name = "person"),
-  list(display_name = "Visit", table_name = "visit_occurrence"),
-  list(display_name = "Condition", table_name = "condition_occurrence"),
-  list(display_name = "Procedure", table_name = "procedure_occurrence"),
-  list(display_name = "Measurement", table_name = "measurement"),
-  list(display_name = "Drug", table_name = "drug_exposure"),
-  list(display_name = "Note", table_name = "note"),
-  list(display_name = "Death", table_name = "death"),
-  list(display_name = "Provider", table_name = "provider"),
-  list(display_name = "Care Site", table_name = "care_site")
-)
-
-
-omop_show_columns <- list(
-  person = c("person_id", "birth_datetime", "gender_concept_id", "race_concept_id", "ethnicity_concept_id"),
-
-  condition_occurrence = c(
-    "person_id",
-    "condition_occurrence_id",
-    "condition_concept_id",
-    "condition_start_date",
-    "condition_end_date"
+  person = list(
+    display_name = "Person",
+    show_columns = c("person_id", "birth_datetime", "gender_concept_id", "race_concept_id", "ethnicity_concept_id")
   ),
-  visit_occurrence = c(
-    "person_id",
-    "visit_occurrence_id",
-    "visit_concept_id",
-    "visit_start_date",
-    "visit_end_date"
+  visit_occurrence = list(
+    display_name = "Visit",
+    show_columns = c("person_id", "visit_occurrence_id", "visit_concept_id", "visit_start_date", "visit_end_date")
   ),
-  procedure_occurrence = c(
-    "person_id",
-    "procedure_occurrence_id",
-    "procedure_concept_id",
-    "procedure_date"
+  condition_occurrence = list(
+    display_name = "Condition",
+    show_columns = c("person_id", "condition_occurrence_id", "condition_concept_id", "condition_start_date", "condition_end_date")
   ),
-  measurement = c(
-    "person_id",
-    "measurement_id",
-    "measurement_date",
-    "measurement_concept_id",
-    "value_as_number",
-    "unit_concept_id",
-    "value_as_concept_id"
+  procedure_occurrence = list(
+    display_name = "Procedure",
+    show_columns = c("person_id", "procedure_occurrence_id", "procedure_concept_id", "procedure_date")
   ),
-  drug_exposure = c(
-    "person_id",
-    "drug_exposure_id",
-    "drug_concept_id",
-    "drug_exposure_start_date",
-    "drug_exposure_end_date",
-    "quantity"
+  measurement = list(
+    display_name = "Measurement",
+    show_columns = c("person_id", "measurement_id", "measurement_date", "measurement_concept_id", "value_as_number", "unit_concept_id", "value_as_concept_id")
   ),
-  note = c(
-    "person_id",
-    "note_id",
-    "note_date",
-    "note_type_concept_id",
-    "note_title",
-    "note_text_preview"
+  drug_exposure = list(
+    display_name = "Drug",
+    show_columns = c("person_id", "drug_exposure_id", "drug_concept_id", "drug_exposure_start_date", "drug_exposure_end_date", "quantity")
   ),
-  death = c(
-    "person_id",
-    "death_date",
-    "death_type_concept_id",
-    "cause_concept_id"
+  note = list(
+    display_name = "Note",
+    show_columns = c("person_id", "note_id", "note_date", "note_type_concept_id", "note_title", "note_text_preview")
+  ),
+  death = list(
+    display_name = "Death",
+    show_columns = c("person_id", "death_date", "death_type_concept_id", "cause_concept_id")
+  ),
+  provider = list(
+    display_name = "Provider",
+    show_columns = c("provider_id", "provider_name", "specialty_concept_id")
+  ),
+  care_site = list(
+    display_name = "Care Site",
+    show_columns = c("care_site_id", "care_site_name", "place_of_service_concept_id")
   )
 )
+
+for (i in names(omop_panes)) {
+  omop_panes[[i]]$table_name <- i
+}
+
+

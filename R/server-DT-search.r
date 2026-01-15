@@ -166,22 +166,20 @@ head_max_limit <- 2000
 #   row_length: integer, number of rows to return
 #
 # Returns: The required data
-filter_data <- function(query, show_columns, params_search, params_order = NULL, row_start = 0, row_length = 100) {
+filter_data <- function(query, show_columns, params_search, params_order = NULL, row_start = 0, row_length = 100, post_process_pipe = \(x) x) {
     col_types <- get_column_type(query)
     `%||%` <- function(x, y) if (is.null(x)) y else x
 
     search_vars <- collect_search_vars(params_search)
     order_vars <- names(params_order %||% list())
-    needed_cols <- unique(c(show_columns, order_vars, search_vars))
-    if (length(needed_cols) > 0) {
-        query <- dplyr::select(query, dplyr::all_of(needed_cols))
-    }
 
     q <- apply_filters(query, params_search, col_types)
 
     order_exprs <- build_order_exprs(params_order)
 
-    q <- q |> mutate(shiny_row_count = n())
+    q <- q |> 
+        post_process_pipe() |>
+        mutate(shiny_row_count = n())
     
     if (length(order_exprs) > 0) {
         q <- dplyr::arrange(q, !!!order_exprs)
