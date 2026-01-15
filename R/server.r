@@ -14,6 +14,12 @@ build_table_info <- function(con) {
         }
         show_columns <- intersect(desired_show_columns, union(table_columns, desired_show_columns))
 
+        display_concept_column <- omop_panes[[table_name]]$display_concept_column
+        display_concept_column <- intersect(display_concept_column, table_columns)
+
+        date_filter_columns <- omop_panes[[table_name]]$date_filter_columns
+        date_filter_columns <- intersect(date_filter_columns, table_columns)
+
         concept_columns <- intersect(
             if (is.null(omop_concept_id_columns[[table_name]])) character(0) else omop_concept_id_columns[[table_name]],
             table_columns
@@ -25,12 +31,15 @@ build_table_info <- function(con) {
         }
 
 
+
         table_info[[table_name]] <- list(
             columns = table_columns,
             column_types = column_types,
             show_columns = show_columns,
             concept_columns = concept_columns,
-            key_column = key_column
+            key_column = key_column,
+            display_concept_column = display_concept_column,
+            date_filter_columns = date_filter_columns
         )
     }
 
