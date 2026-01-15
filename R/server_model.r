@@ -385,26 +385,27 @@ render_visit_detail_modal <- function(detail_list, params){
 }
 
 fetch_modal_detail_generic <- function(meta_dt, con, params){
-    table_info <- params$table_info[[meta_dt$table_name]]
-    req(!is.null(table_info))
-    id_col <- table_info$key_column
+    table_name <- meta_dt$table_name
+    current_table_info <- params$table_info[[table_name]]
+    req(!is.null(current_table_info))
+    id_col <- current_table_info$key_column
+    concept_columns <- current_table_info$concept_columns
 
     req(!is.null(id_col))
-    detail <- table_info$table |> 
+    detail <- con[[table_name]] |> 
         filter(!!rlang::sym(id_col) == meta_dt$row_id) |>
         concept_id_to_concept_name(
             con=con,
-            table_name = meta_dt$table_name,
-            tbl_all_cols = table_info$columns
+            table_name = table_name,
+            concept_columns = concept_columns
         ) |>
         collect()|>
         as.list()
-
-    detail$shiny_table_name <- meta_dt$table_name
+    detail$shiny_table_name <- table_name
     detail
 }
 
-get_visit_related_ids <- function(visit_id, params, visit_id_col){
+get_visit_related_ids <- function(con, visit_id, params){
     related_tables <- c(
         "condition_occurrence",
         "procedure_occurrence",
@@ -423,15 +424,15 @@ get_visit_related_ids <- function(visit_id, params, visit_id_col){
         if (is.null(table_info)) {
             next
         }
-        if (!(visit_id_col %in% table_info$columns)) {
+        if (!("visit_occurrence_id" %in% table_info$columns)) {
             next
         }
         key_col <- table_info$key_column
         if (is.null(key_col)) {
             next
         }
-        ids <- table_info$table |>
-            filter(!!rlang::sym(visit_id_col) == visit_id) |>
+        ids <- con[[tbl_name]] |>
+            filter(visit_occurrence_id == visit_id) |>
             select(!!rlang::sym(key_col)) |>
             distinct() |>
             collect() |>
@@ -447,7 +448,8 @@ fetch_modal_detail_visit <- function(meta_dt, con, params){
     detail <- fetch_modal_detail_generic(meta_dt, con, params)
     id_col <- params$table_info[[meta_dt$table_name]]$key_column
     if (!is.null(id_col) && length(detail[[id_col]]) > 0) {
-        related_ids <- get_visit_related_ids(detail[[id_col]], params, id_col)
+        visit_id <- detail$visit_occurrence_id
+        related_ids <- get_visit_related_ids(con, visit_id, params)
         if (length(related_ids) > 0) {
             for (tbl_name in names(related_ids)) {
                 key_col <- params$table_info[[tbl_name]]$key_column

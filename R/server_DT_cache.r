@@ -10,16 +10,18 @@ clear_global_DT_cache <- function(){
 
 cache_row_count <- 1000
 
-#' Check whether cached DT data is available
-#'
-#' @param table_name Character scalar. Table name.
-#' @param params_search Named list of search parameters.
-#' @param order_params List of order specs with `column` and `ascending`.
-#' @param params_start Integer scalar. Zero-based start index.
-#' @param params_len Integer scalar. Requested page length.
-#' @return Logical scalar indicating whether the cache can be used.
-#' @keywords internal
-is_DT_cache_available <- function(table_name, params_search, order_params, params_start, params_len){
+init_DT_cache <- function(table_name){
+    table_cache <- global_DT_space[[table_name]]
+    if (is.null(table_cache)){
+        table_cache <- list(
+            dt_render = NULL,
+            params = list()
+        )
+        global_DT_space[[table_name]] <- table_cache
+    }
+}
+
+is_DT_render_cached <- function(table_name, params){
     table_cache <- global_DT_space[[table_name]]
     if (is.null(table_cache)){
         return(FALSE)
@@ -28,13 +30,49 @@ is_DT_cache_available <- function(table_name, params_search, order_params, param
     if (is.null(dt_render_cache)) {
         return(FALSE)
     }
+    cached_params <- dt_render_cache$params
+    if (!identical(cached_params, params)) {
+        return(FALSE)
+    }
+    return(TRUE)
+}
 
-    cache_start <- dt_render_cache$start
+get_DT_render_from_cache <- function(table_name){
+    table_cache <- global_DT_space[[table_name]]
+    dt_render <- table_cache$dt_render
+    return(dt_render)
+}
+
+set_DT_render_cache <- function(table_name, dt_render, params){
+    table_cache <- global_DT_space[[table_name]]
+    table_cache$dt_render <- dt_render
+    table_cache$params <- params
+    global_DT_space[[table_name]] <- table_cache
+}
+
+
+#' Check whether cached DT data is available
+#'
+#' @param table_name Character scalar. Table name.
+#' @param params_search Named list of search parameters.
+#' @param params_order List of order specs with `column` and `ascending`.
+#' @param params_start Integer scalar. Zero-based start index.
+#' @param params_len Integer scalar. Requested page length.
+#' @return Logical scalar indicating whether the cache can be used.
+#' @keywords internal
+is_DT_data_cache_available <- function(table_name, params_search, params_order, params_start, params_len){
+    table_cache <- global_DT_space[[table_name]]
+    data_cache <- table_cache[['data_cache']]
+    if (is.null(data_cache)){
+        return(FALSE)
+    }
+
+    cache_start <- data_cache$start
     cache_end <- cache_start + cache_row_count
     if (params_start >= cache_start &&
         (params_start + params_len) <= cache_end) {
-            combined_condition <- list(params_search, order_params)
-            if (identical(combined_condition, dt_render_cache$combined_condition)) {
+            combined_condition <- list(params_search, params_order)
+            if (identical(combined_condition, data_cache$combined_condition)) {
                 return(TRUE)
             }
         }
@@ -52,19 +90,19 @@ is_DT_cache_available <- function(table_name, params_search, order_params, param
 #' @keywords internal
 get_cached_DT <- function(table_name, params_start, params_len){
     table_cache <- global_DT_space[[table_name]]
-    dt_render_cache <- table_cache$dt_render_cache
-    cache_matrix <- dt_render_cache$cache_matrix
-    cache_start <- params_start - dt_render_cache$start + 1
-    cache_end <- min(params_start - dt_render_cache$start + params_len, nrow(cache_matrix))
+    data_cache <- table_cache$data_cache
+    cache_matrix <- data_cache$cache_matrix
+    cache_start <- params_start - data_cache$start + 1
+    cache_end <- min(params_start - data_cache$start + params_len, nrow(cache_matrix))
     if (cache_end != 0){
         cached_data <- cache_matrix[
             cache_start:cache_end, , drop = FALSE]
     } else {
-        cached_data <- cache_matrix
+        cached_data <- cache_matrix[c(), , drop=FALSE]
     }
     return(list(
-        recordsTotal = dt_render_cache$recordsTotal,
-        recordsFiltered = dt_render_cache$recordsFiltered,
+        recordsTotal = data_cache$recordsFiltered,
+        recordsFiltered = data_cache$recordsFiltered,
         cached_data = cached_data
     ))
 }
@@ -75,24 +113,22 @@ get_cached_DT <- function(table_name, params_start, params_len){
 #' @param cache_start Integer scalar. Cache start row.
 #' @param params_search Named list of search parameters.
 #' @param params_order List of order specs with `column` and `ascending`.
-#' @param records_total Integer scalar. Total record count.
 #' @param records_filtered Integer scalar. Filtered record count.
 #' @param cache_matrix Matrix of cached DT rows.
 #' @return No return value, called for side effects.
 #' @keywords internal
-set_cached_DT <- function(table_name, cache_start, params_search, params_order, records_total, records_filtered, cache_matrix){
+set_cached_DT <- function(table_name, cache_start, params_search, params_order, records_filtered, cache_matrix){
     table_cache <- global_DT_space[[table_name]]
     if (is.null(table_cache)){
         table_cache <- list()
     }
-    dt_render_cache <- list(
+    data_cache <- list(
         start = cache_start,
         combined_condition = list(params_search, params_order),
-        recordsTotal = records_total,
         recordsFiltered = records_filtered,
         cache_matrix = cache_matrix
     )
-    table_cache$dt_render_cache <- dt_render_cache
+    table_cache[['data_cache']] <- data_cache
     global_DT_space[[table_name]] <- table_cache
 }
 
@@ -109,7 +145,7 @@ set_cached_DT <- function(table_name, cache_start, params_search, params_order, 
 #' @param params_start Integer scalar. Zero-based start index.
 #' @return List with `start`, `recordsTotal`, `recordsFiltered`, and `cached_data`.
 #' @keywords internal
-build_cache_DT <- function(con, table_info, table_name, post_process_pipe, show_columns, params_search, params_order, params_start) {
+build_cache_DT <- function(con, table_info, table_name, post_process_pipe, show_columns, params_search, params_order, params_startm, params_len) {
     tbl <- table_info$table
     tbl_all_cols <- table_info$columns
     key_column <- table_info$key_column

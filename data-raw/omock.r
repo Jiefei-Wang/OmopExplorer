@@ -23,8 +23,8 @@ datasetName <- "synpuf-1k_5.4"
 cdm <- mockCdmFromDataset(datasetName = datasetName)
 
 
-person_1 <- cdm$person |> anti_join(cdm$death, by = "person_id") |> head(10)
-person_2 <- cdm$person |> semi_join(cdm$death, by = "person_id") |> head(11)
+person_1 <- cdm$person |> anti_join(cdm$death, by = "person_id") |> head(100)
+person_2 <- cdm$person |> semi_join(cdm$death, by = "person_id") |> head(100)
 person <- bind_rows(person_1, person_2) |> collect()
 
 visit_occurrence <- cdm$visit_occurrence |>
@@ -59,31 +59,18 @@ limit_by_visit <- function(tbl) {
 
 tables <- c(
   "care_site",
-  "cdm_source",
   "concept",
-  "concept_ancestor",
-  "concept_class",
-  "concept_relationship",
-  "concept_synonym",
-  "condition_era",
   "condition_occurrence",
   "death",
-  "device_exposure",
-  "domain",
-  "drug_era",
   "drug_exposure",
-  "drug_strength",
   "location",
   "measurement",
   "observation",
-  "observation_period",
-  "payer_plan_period",
   "person",
   "procedure_occurrence",
   "provider",
   "relationship",
-  "visit_occurrence",
-  "vocabulary"
+  "visit_occurrence"
 )
 
 
@@ -98,6 +85,8 @@ for (tbl_name in tables) {
   } else {
     tbl <- tbl |> filter_person() |> limit_by_visit() |> collect()
   }
+
+  
 
   mock_cdm[[tbl_name]] <- tbl
 }
@@ -201,7 +190,28 @@ if ("location" %in% names(mock_cdm)) {
 }
 
 
-usethis::use_data(mock_cdm, overwrite = TRUE, internal = TRUE)
+
+# Update *_datetime columns using *_date columns if available
+for (tbl_name in names(mock_cdm)) {
+  tbl <- mock_cdm[[tbl_name]]
+  col_names <- names(tbl)
+  datetime_cols <- grep("_datetime$", col_names, value = TRUE)
+  for (dt_col in datetime_cols) {
+    date_col <- sub("datetime$", "date", dt_col)
+    if (date_col %in% col_names) {
+      # Only update if *_datetime is NA or all values
+      idx_to_update <- is.na(tbl[[dt_col]]) & !is.na(tbl[[date_col]])
+      if (any(idx_to_update)) {
+        # Convert date to POSIXct (datetime)
+        tbl[[dt_col]][idx_to_update] <- as.POSIXct(tbl[[date_col]][idx_to_update])
+      }
+    }
+  }
+  mock_cdm[[tbl_name]] <- tbl
+}
+
+usethis::use_data(mock_cdm, overwrite = TRUE, internal = FALSE)
 
 # check the file size
-paste0(file.info("R/sysdata.rda")$size/1024/1024, " MB")
+paste0(file.info("data/mock_cdm.rda")$size/1024/1024, " MB")
+

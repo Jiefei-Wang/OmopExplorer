@@ -12,7 +12,7 @@ build_cache_DT(
   show_columns,
   params_search,
   params_order,
-  params_start,
+  params_startm,
   params_len
 )
 }
@@ -32,8 +32,6 @@ build_cache_DT(
 \item{params_order}{List of order specs with \code{column} and \code{ascending}.}
 
 \item{params_start}{Integer scalar. Zero-based start index.}
-
-\item{params_len}{Integer scalar. Requested page length.}
 }
 \value{
 List with \code{start}, \code{recordsTotal}, \code{recordsFiltered}, and \code{cached_data}.

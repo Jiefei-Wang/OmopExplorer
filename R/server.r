@@ -24,8 +24,8 @@ build_table_info <- function(con) {
             stop(glue::glue("Key column '{key_column}' for table '{table_name}' not found in table columns"))
         }
 
+
         table_info[[table_name]] <- list(
-            table = tbl,
             columns = table_columns,
             column_types = column_types,
             show_columns = show_columns,
@@ -82,17 +82,17 @@ browser_server <- function(input, output, session, con) {
     register_server_sidebar(input, output, session, con, params)
     register_server_topbar(input, output, session, con, params)
     
-
-    register_server_person_DT(input, output, session, con, params)
-    register_server_visit_DT(input, output, session, con, params)
-    register_server_condition_DT(input, output, session, con, params)
-    register_server_procedure_DT(input, output, session, con, params)
-    register_server_measurement_DT(input, output, session, con, params)
-    register_server_drug_DT(input, output, session, con, params)
-    register_server_note_DT(input, output, session, con, params)
-    register_server_death_DT(input, output, session, con, params)
-    register_server_provider_DT(input, output, session, con, params)
-    register_server_care_site_DT(input, output, session, con, params)
+    register_server_DT(input, output, session, con, params)
+    # register_server_person_DT(input, output, session, con, params)
+    # register_server_visit_DT(input, output, session, con, params)
+    # register_server_condition_DT(input, output, session, con, params)
+    # register_server_procedure_DT(input, output, session, con, params)
+    # register_server_measurement_DT(input, output, session, con, params)
+    # register_server_drug_DT(input, output, session, con, params)
+    # register_server_note_DT(input, output, session, con, params)
+    # register_server_death_DT(input, output, session, con, params)
+    # register_server_provider_DT(input, output, session, con, params)
+    # register_server_care_site_DT(input, output, session, con, params)
     
 }
 
