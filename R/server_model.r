@@ -1,29 +1,53 @@
-make_clickable_id <- function(id_name, id_value){
+make_clickable_id <- function(id_name, id_value, display_value = NULL){
     table_name <- omop_key_to_table[[id_name]]
-    
-    htmlTemplate(
-        filename = system.file("html/modal_clickable.html", package = "OmopExplorer"),
-        table_name = table_name,
-        id_value = id_value
+    if (is.null(display_value)) {
+        display_value <- id_value
+    }
+    tags$a(
+        href = "#",
+        onclick = sprintf(
+            "Shiny.setInputValue('modal_click_meta', {table_name: '%s', row_id: '%s'}, {priority: 'event'}); return false;",
+            table_name,
+            id_value
+        ),
+        display_value
     )
 }
 
-make_modal_id_list <- function(id_name, id_values){
+make_modal_id_list <- function(id_name, id_values, labels = NULL){
     structure(
-        list(id_name = id_name, values = id_values),
+        list(id_name = id_name, values = id_values, labels = labels),
         class = "modal_clickable_ids"
     )
 }
 
-make_clickable_id_list <- function(id_name, id_values){
+make_clickable_id_list <- function(id_name, id_values, labels = NULL){
     if (length(id_values) == 0) {
         return("")
     }
-    tags$span(
+    truncate_label <- function(value, max_len = 40){
+        if (is.null(value) || length(value) == 0 || (length(value) == 1 && is.na(value))) {
+            return("")
+        }
+        value <- as.character(value)
+        if (nchar(value) <= max_len) {
+            return(value)
+        }
+        paste0(substr(value, 1, max_len - 3), "...")
+    }
+    tags$div(
+        style = "display: flex; flex-direction: column; gap: 4px; white-space: normal;",
         lapply(seq_along(id_values), function(idx) {
-            tagList(
-                make_clickable_id(id_name, id_values[[idx]]),
-                if (idx < length(id_values)) ", " else ""
+            display_value <- NULL
+            if (!is.null(labels) && idx <= length(labels)) {
+                display_value <- labels[[idx]]
+            }
+            if (is.null(display_value) || length(display_value) == 0 || (length(display_value) == 1 && is.na(display_value))) {
+                display_value <- id_values[[idx]]
+            }
+            tags$div(
+                style = "margin: 0; padding: 0;",
+                make_clickable_id(id_name, id_values[[idx]], truncate_label(display_value))
             )
         })
     )
@@ -35,7 +59,7 @@ make_modal_view_item <- function(label, value){
     }else if (length(value) == 1 && is.na(value)) {
         value <- ""
     }else if (inherits(value, "modal_clickable_ids")) {
-        value <- make_clickable_id_list(value$id_name, value$values)
+        value <- make_clickable_id_list(value$id_name, value$values, value$labels)
     }else if (label %in% names(omop_key_to_table)) {
         value <- make_clickable_id(label, value)
     } else {
@@ -90,11 +114,24 @@ make_grid_fields <- function(detail_list, params, fields){
     intersect(fields, names(detail_list))
 }
 
+get_display_value <- function(detail_list, field_name){
+    value <- detail_list[[field_name]]
+    mapped_col <- get_mapped_concept_id_col(field_name)
+    if (mapped_col %in% names(detail_list)) {
+        mapped_value <- detail_list[[mapped_col]]
+        if (!is.null(mapped_value) && length(mapped_value) > 0 && !(length(mapped_value) == 1 && is.na(mapped_value))) {
+            value <- mapped_value
+        }
+    }
+    value
+}
+
 make_grid_items <- function(detail_list, fields){
     lapply(fields, function(field_name) {
+        value <- get_display_value(detail_list, field_name)
         div(
             class = "modal-grid-item",
-            make_modal_view_item(field_name, detail_list[[field_name]])
+            make_modal_view_item(field_name, value)
         )
     })
 }
@@ -431,14 +468,56 @@ get_visit_related_ids <- function(con, visit_id, params){
         if (is.null(key_col)) {
             next
         }
-        ids <- con[[tbl_name]] |>
-            filter(visit_occurrence_id == visit_id) |>
-            select(!!rlang::sym(key_col)) |>
-            distinct() |>
-            collect() |>
-            dplyr::pull(1)
-        if (length(ids) > 0) {
-            results[[tbl_name]] <- ids
+        display_col <- table_info$display_concept_column
+        display_col <- display_col[!is.na(display_col) & nzchar(display_col)]
+        display_col <- if (length(display_col) > 0) display_col[[1]] else NULL
+        query <- con[[tbl_name]] |>
+            filter(visit_occurrence_id == visit_id)
+        if (is.null(display_col)) {
+            query <- query |> select(!!rlang::sym(key_col)) |> distinct()
+        } else {
+            select_cols <- c(key_col, display_col)
+            source_map <- omop_concept_id_source_value_map[[tbl_name]]
+            source_col <- NULL
+            if (!is.null(source_map)) {
+                source_col <- source_map[[display_col]]
+            }
+            if (!is.null(source_col) && nzchar(source_col)) {
+                select_cols <- unique(c(select_cols, source_col))
+            }
+            query <- query |> select(!!!rlang::syms(select_cols)) |> distinct()
+        }
+        if (!is.null(display_col)) {
+            query <- concept_id_to_concept_name(
+                query = query,
+                con = con,
+                table_name = tbl_name,
+                concept_columns = display_col
+            )
+        }
+        rows <- query |>
+            collect()
+        if (nrow(rows) > 0) {
+            ids <- rows[[key_col]]
+            labels <- NULL
+            if (!is.null(display_col)) {
+                mapped_col <- get_mapped_concept_id_col(display_col)
+                if (mapped_col %in% names(rows)) {
+                    labels <- rows[[mapped_col]]
+                } else if (display_col %in% names(rows)) {
+                    labels <- rows[[display_col]]
+                }
+            }
+            if (!is.null(labels)) {
+                base_labels <- ifelse(is.na(labels), "", labels)
+                base_labels <- gsub("\\s*\\(\\d+\\)$", "", base_labels)
+                labels <- ifelse(
+                    base_labels == "",
+                    as.character(ids),
+                    paste0(base_labels, " (", ids, ")")
+                )
+            }
+            results[[tbl_name]] <- list(values = ids, labels = labels)
         }
     }
     results
@@ -453,8 +532,12 @@ fetch_modal_detail_visit <- function(meta_dt, con, params){
         if (length(related_ids) > 0) {
             for (tbl_name in names(related_ids)) {
                 key_col <- params$table_info[[tbl_name]]$key_column
-                label <- glue("{key_col} (related)")
-                detail[[label]] <- make_modal_id_list(key_col, related_ids[[tbl_name]])
+                label <- glue("{tbl_name} (related)")
+                detail[[label]] <- make_modal_id_list(
+                    key_col,
+                    related_ids[[tbl_name]]$values,
+                    related_ids[[tbl_name]]$labels
+                )
             }
         }
     }
@@ -775,10 +858,12 @@ register_server_modal <- function(input, output, session, con, params){
         
         dt$person_id <- NULL
         dt[[id_col]] <- NULL
+        display_names <- names(dt)
+        display_names <- display_names[!grepl("^shiny_", display_names)]
         
         div(
-            lapply(names(dt), function(col_name) {
-                val <- dt[[col_name]]
+            lapply(display_names, function(col_name) {
+                val <- get_display_value(dt, col_name)
                 make_modal_view_item(col_name, val)
             })
         )
