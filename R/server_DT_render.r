@@ -96,6 +96,7 @@ sql_dt_filter <- function(table_info, con, table_name, post_process_pipe,  param
         current_table_info <- table_info[[table_name]]
         show_columns <- current_table_info$show_columns
         tbl_all_cols <- current_table_info$columns
+        key_column <- current_table_info$key_column
 
         params_start <- as.integer(params_dt$start)
         params_len <- as.integer(params_dt$length)
@@ -107,6 +108,10 @@ sql_dt_filter <- function(table_info, con, table_name, post_process_pipe,  param
             col_db_name <- params_dt$columns[[col_idx]]$name
             ascending <- (params_dt$order[[i]]$dir == "asc")
             params_order[[col_db_name]] <- ascending
+        }
+        # key column is always added as the last order criterion for stable paging
+        if (!is.null(key_column) && !(key_column %in% names(params_order))) {
+            params_order[[key_column]] <- TRUE
         }
 
         cache_available <- is_DT_data_cache_available(

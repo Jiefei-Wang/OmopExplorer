@@ -141,6 +141,8 @@ collect_search_vars <- function(params) {
 #######################################
 # filter_data
 #######################################
+# the maximum row index to fetch using head()
+head_max_limit <- 2000
 
 # The function to filter, order, and paginate data.
 #
@@ -164,7 +166,7 @@ collect_search_vars <- function(params) {
 #   row_length: integer, number of rows to return
 #
 # Returns: The required data
-filter_data <- function(query, show_columns, params_search, params_order = NULL, row_start = 0, row_length = NULL) {
+filter_data <- function(query, show_columns, params_search, params_order = NULL, row_start = 0, row_length = 100) {
     col_types <- get_column_type(query)
     `%||%` <- function(x, y) if (is.null(x)) y else x
 
@@ -179,32 +181,45 @@ filter_data <- function(query, show_columns, params_search, params_order = NULL,
 
     order_exprs <- build_order_exprs(params_order)
 
+    q <- q |> mutate(shiny_row_count = n())
+    
     if (length(order_exprs) > 0) {
         q <- dplyr::arrange(q, !!!order_exprs)
     }
-    q <- q |> mutate(shiny_row_count = n())
     start <- row_start %||% 0
+    n_fetch <- start + row_length
+    select_cols <- unique(c(show_columns, order_vars))
+    if (n_fetch < head_max_limit) {
+        q |>
+        head(n_fetch)|>
+        select(shiny_row_count, all_of(select_cols))->
+        q
+        
+        out <- q |> collect()
+        # cut to the required rows
+        if (nrow(out) > 0){
+            end_row <- min(n_fetch, nrow(out))
+            out <- out[(start + 1):end_row, , drop = FALSE]
+        }
+    } else {
+        q |>
+        mutate(nr = row_number()) |>
+        filter(nr > start & nr <= n_fetch) |>
+        select(shiny_row_count, all_of(select_cols)) ->
+        q
 
-    if (!is.null(row_length)) {
-        n_fetch <- start + row_length
-        q <- head(q, n_fetch)
-    }else{
-        n_fetch <- Inf
+        out <- q |> collect()
     }
 
-    select_cols <- unique(c(show_columns, order_vars))
-    q <- q |> select(shiny_row_count, all_of(select_cols))
-    
-    out <- q |> collect()
     if (nrow(out) > 0){
         recordsFiltered <- out$shiny_row_count[1]
         out$shiny_row_count <- NULL
-        end_row <- min(n_fetch, nrow(out))
-        out <- out[(start + 1):end_row, , drop = FALSE]
     }else{
+        # keep one here so DT should be happy
         recordsFiltered <- 1
     }
     dt <- out |> select(all_of(show_columns))
+
     list(
         data = dt,
         recordsFiltered = recordsFiltered

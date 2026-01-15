@@ -1,4 +1,5 @@
 global_DT_space <- new.env()
+cache_row_count <- 1000
 
 #' Clear the global DT cache
 #'
@@ -8,7 +9,6 @@ clear_global_DT_cache <- function(){
     rm(list = ls(envir = global_DT_space), envir = global_DT_space)
 }
 
-cache_row_count <- 1000
 
 init_DT_cache <- function(table_name){
     table_cache <- global_DT_space[[table_name]]
