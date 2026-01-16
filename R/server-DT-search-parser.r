@@ -180,9 +180,6 @@ build_concept_items <- function(col, value, col_types, available_cols, concept_s
     items
 }
 
-is_global_search <- function(col, available_cols) {
-    is.null(col) || !(col %in% available_cols) || col %in% c("search_anything", "shiny_search_anything")
-}
 
 # Reduce the complexity of search parameters
 # E.g. list(list(relation="AND", items=list(...)), list(relation="AND", items=list(...))) -> list(c(list(...), list(...)))

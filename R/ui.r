@@ -13,12 +13,12 @@ sidebar_ui <- sidebar(
       )
     ),
     div(
-      class = "search-anything-row",
+      class = "search-date-row",
       make_search_box(
-        inputId = "sidebar_search_anything",
-        label = "Search Anything",
+        inputId = "sidebar_date_filter",
+        label = "Date Filter",
         value = "",
-        placeholder = "Search all columns"
+        placeholder = "use ~ for a range"
       )
     ),
     hr(style = "margin-top: 10px; margin-bottom: 10px;"),

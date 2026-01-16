@@ -8,40 +8,6 @@ sidebar_search_clear_id <- function(column_name) {
 }
 
 
-get_relavent_search_values <- function(sidebar_search_values, table_info, table_name){
-    table_info_current <- table_info[[table_name]]
-    available_cols <- "shiny_search_anything"
-    if (!is.null(table_info_current)){
-        available_cols <- c(available_cols, table_info_current$columns)
-    }
-    relavent_search_values <- list()
-    for (i in available_cols){
-        elt <- sidebar_search_values[[i]]
-        if (!is.null(elt) && elt != ""){
-            relavent_search_values[[i]] <- elt
-        }
-    }
-    relavent_search_values
-}
-
-
-
-get_sidebar_column_filters <- function(params, table_name) {
-    cols <- params$table_info[[table_name]]$columns
-    filters <- list()
-    for (col in cols) {
-        val <- params$sidebar_search_values_internal[[col]]
-        if (!is.null(val)) {
-            filters[[col]] <- val
-        }
-    }
-    filters
-}
-
-get_global_sidebar_value <- function(params, table_name) {
-    stored <- params$sidebar_search_values_internal[["shiny_search_anything"]]
-    if (is.null(stored)) "" else stored
-}
 
 
 register_server_sidebar <- function(input, output, session, con, params){
@@ -51,25 +17,19 @@ register_server_sidebar <- function(input, output, session, con, params){
     }))
     all_available_columns <- unique(all_available_columns)
 
-    observeEvent(params$displayed_table_name(), {
-        current_table <- params$displayed_table_name()
-        # Clear the search input when switching tables
-        updateTextInput(session, "sidebar_search_anything", value = "")
-        params$sidebar_search_values_internal[["shiny_search_anything"]] <- ""
-    }, ignoreInit = FALSE)
 
     # collect search anything input
-    observeEvent(input$sidebar_search_anything, {
+    observeEvent(input$sidebar_date_filter, {
         # global search input
-        params$sidebar_search_values_internal[["shiny_search_anything"]] <- input$sidebar_search_anything
+        params$sidebar_search_values_internal[["shiny_date_filter"]] <- input$sidebar_date_filter
     })
 
     observeEvent(input$sidebar_clear_all, {
         current_table <- params$displayed_table_name()
         table_info <- params$table_info[[current_table]]
 
-        updateTextInput(session, "sidebar_search_anything", value = "")
-        params$sidebar_search_values_internal[["shiny_search_anything"]] <- ""
+        updateTextInput(session, "sidebar_date_filter", value = "")
+        params$sidebar_search_values_internal[["shiny_date_filter"]] <- ""
 
         for (col in table_info$columns) {
             input_id <- sidebar_search_input_id(col)
@@ -140,24 +100,24 @@ register_server_sidebar <- function(input, output, session, con, params){
         })
     }
 
-    # Handle clear button for global search
-    observeEvent(input$clear_sidebar_search_anything, {
-        updateTextInput(session, "sidebar_search_anything", value = "")
-        params$sidebar_search_values_internal[["shiny_search_anything"]] <- ""
-    }, ignoreInit = TRUE)
+    # # Handle clear button for global search
+    # observeEvent(input$clear_sidebar_search_anything, {
+    #     updateTextInput(session, "sidebar_search_anything", value = "")
+    #     params$sidebar_search_values_internal[["shiny_search_anything"]] <- ""
+    # }, ignoreInit = TRUE)
 
-    # Handle clear buttons for column search inputs
-    for (col in all_available_columns) {
-        local({
-            col_local <- col
-            input_id <- sidebar_search_input_id(col_local)
-            clear_id <- sidebar_search_clear_id(col_local)
+    # # Handle clear buttons for column search inputs
+    # for (col in all_available_columns) {
+    #     local({
+    #         col_local <- col
+    #         input_id <- sidebar_search_input_id(col_local)
+    #         clear_id <- sidebar_search_clear_id(col_local)
 
-            observeEvent(input[[clear_id]], {
-                updateTextInput(session, input_id, value = "")
-                params$sidebar_search_values_internal[[col_local]] <- ""
-            }, ignoreInit = TRUE)
-        })
-    }
+    #         observeEvent(input[[clear_id]], {
+    #             updateTextInput(session, input_id, value = "")
+    #             params$sidebar_search_values_internal[[col_local]] <- ""
+    #         }, ignoreInit = TRUE)
+    #     })
+    # }
 }
 

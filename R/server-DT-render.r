@@ -18,6 +18,16 @@ render_db_DT <- function(
 
     show_columns <- current_table_info$show_columns
     search_values <- params$sidebar_search_values()
+
+    shiny_date_filter <- search_values[["shiny_date_filter"]]
+    if (!is.null(shiny_date_filter) && shiny_date_filter != "") {
+        search_values[["shiny_date_filter"]] <- NULL
+        date_columns <- current_table_info$date_filter_columns
+        for (date_col in date_columns) {
+            search_values[[date_col]] <- shiny_date_filter
+        }
+    }
+
     if (table_name != "person") {
         search_values[['person_id']] <- params$target_person_id()
     }
